@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Crusader Combat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="ui">
+      <div class="title">
+        <span class="accent">Crusader</span> Combat
+      </div>
+      <div class="hud">
+        <div class="hud-section">
+          <div class="label">Knight</div>
+          <div class="bar-shell">
+            <div id="player-health" class="bar-fill"></div>
+          </div>
+        </div>
+        <div class="hud-section">
+          <div class="label">Demons</div>
+          <div class="bar-shell demons">
+            <div id="demon-tide" class="bar-fill demons"></div>
+          </div>
+        </div>
+        <div class="hud-section compact">
+          <div class="label">Score</div>
+          <div id="score" class="value">0</div>
+        </div>
+        <div class="hud-section compact">
+          <div class="label">Time</div>
+          <div id="time" class="value">0s</div>
+        </div>
+      </div>
+      <div class="help">
+        <span>Move: A / D &nbsp; Jump: W or Space &nbsp; Attack: J &nbsp; Block: K</span>
+      </div>
+    </div>
+
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="panel">
+        <h2 id="overlay-title">Victory</h2>
+        <p id="overlay-message"></p>
+        <div class="score-entry">
+          <label>
+            Name:
+            <input id="player-name-input" maxlength="16" placeholder="Anonymous" />
+          </label>
+          <button id="save-score">Save score</button>
+        </div>
+        <div class="leaderboard">
+          <h3>Top Crusaders</h3>
+          <ul id="leaderboard-list"></ul>
+        </div>
+        <button id="play-again" class="primary">Fight again</button>
+      </div>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+  </html>
+

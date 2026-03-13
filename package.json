@@ -1,0 +1,11 @@
+{
+  "name": "crusader_combat",
+  "version": "1.0.0",
+  "description": "2D Catholic knight vs demons fighting game with simple Node backend and canvas frontend.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "author": "",
+  "license": "MIT"
+}
