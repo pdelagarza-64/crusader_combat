@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "2D Catholic knight vs demons fighting game with simple Node backend and canvas frontend.",
   "main": "server/index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server/index.js"
   },

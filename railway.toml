@@ -1,0 +1,10 @@
+# Railway backend (Node.js)
+# Deploys from repo root; start command from package.json
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node server/index.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
