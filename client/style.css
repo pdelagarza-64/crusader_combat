@@ -146,6 +146,13 @@ body {
   object-fit: cover;
 }
 
+.title-screen-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .title-screen-content {
   position: relative;
   z-index: 2;
@@ -154,35 +161,49 @@ body {
   pointer-events: none;
 }
 
+.title-metal-wrap {
+  margin-bottom: 20px;
+  /* One cast shadow: the title floats in space. No stacked copies. */
+  filter: drop-shadow(0 12px 8px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 24px 32px rgba(0, 0, 0, 0.35));
+}
+
 .title-metal {
   font-family: "Cinzel", "Times New Roman", serif;
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 900;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  margin: 0 0 16px 0;
+  margin: 0;
   color: transparent;
+  /*
+   * 3D by lighting, not by stacking.
+   * Key light from top-left (145deg): bright top-left, dark bottom-right.
+   * Fire fill from below in the shadow side.
+   */
   background: linear-gradient(
-    180deg,
-    #e8e6e0 0%,
-    #c0b8a8 15%,
-    #888070 40%,
-    #504838 60%,
-    #383028 75%,
-    #605850 90%,
-    #a09888 100%
+    145deg,
+    #4c4842 0%,
+    #403c36 18%,
+    #343028 38%,
+    #2c2822 58%,
+    #282420 75%,
+    #322a24 88%,
+    #4a3830 96%,
+    #5a4438 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9));
+  filter: url(#cast-iron-grain);
+  /*
+   * Specular edge only: one soft highlight on the lit edge (top).
+   * No second letter, no extrusion — just a hint of bevel.
+   */
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.8),
-    0 4px 8px rgba(0, 0, 0, 0.6),
-    0 -1px 0 rgba(0, 0, 0, 0.5),
-    1px 0 0 rgba(0, 0, 0, 0.3),
-    -1px 0 0 rgba(0, 0, 0, 0.3),
-    0 1px 0 rgba(0, 0, 0, 0.3);
+    0 0 2px rgba(255, 252, 248, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.12);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .title-subtitle {
