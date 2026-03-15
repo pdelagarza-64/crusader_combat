@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <audio id="title-music" loop preload="auto">
+      <source src="audio/choir.mp3" type="audio/mpeg" />
+      <source src="audio/choir.ogg" type="audio/ogg" />
+    </audio>
     <div id="title-screen" class="title-screen">
       <svg aria-hidden="true" class="title-screen-filters">
         <defs>
@@ -101,6 +105,22 @@
         </div>
         <p class="title-subtitle">Press any key or click to begin</p>
       </div>
+      <nav id="title-main-menu" class="title-main-menu" aria-label="Main menu">
+        <ul class="title-menu-list">
+          <li><button type="button" class="title-menu-btn" data-menu="campaign">Campaign</button></li>
+          <li><button type="button" class="title-menu-btn" data-menu="endless">Endless Mode</button></li>
+          <li><button type="button" class="title-menu-btn" data-menu="options">Options</button></li>
+          <li><button type="button" class="title-menu-btn" data-menu="exit">Exit</button></li>
+        </ul>
+      </nav>
+      <div id="title-options-panel" class="title-options-panel hidden" aria-label="Options">
+        <h2 class="title-options-heading">Options</h2>
+        <p class="title-options-placeholder">More options coming soon.</p>
+        <button type="button" id="title-options-back" class="title-menu-btn">Back</button>
+      </div>
+      <button type="button" id="title-music-toggle" class="title-music-toggle" aria-label="Mute music" title="Mute music">
+        <span class="title-music-toggle-icon" aria-hidden="true">🔊</span>
+      </button>
     </div>
 
     <div class="ui">

@@ -859,7 +859,8 @@ class Game {
     requestAnimationFrame(this.loop);
   }
 
-  start() {
+  start(mode) {
+    this.mode = mode || "campaign";
     this.lastTimestamp = performance.now();
     canvas.focus();
     requestAnimationFrame(this.loop);
@@ -1150,23 +1151,111 @@ function drawFlames() {
   requestAnimationFrame(drawFlames);
 }
 
-function startFromTitleScreen() {
-  if (!titleScreenActive) return;
-  titleScreenActive = false;
-  if (titleScreen) titleScreen.classList.add("hidden");
-  canvas.focus();
-  game.start();
+const titleMusic = document.getElementById("title-music");
+
+function startTitleMusic() {
+  if (!titleMusic) return;
+  const p = titleMusic.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
 }
 
-if (titleScreen) {
-  titleScreen.addEventListener("click", startFromTitleScreen);
+function stopTitleMusic() {
+  if (titleMusic) {
+    titleMusic.pause();
+    titleMusic.currentTime = 0;
+  }
 }
+
+function startFromTitleScreen(mode) {
+  if (!titleScreenActive) return;
+  titleScreenActive = false;
+  stopTitleMusic();
+  if (titleScreen) titleScreen.classList.add("hidden");
+  canvas.focus();
+  game.start(mode);
+}
+
+const titleMainMenu = document.getElementById("title-main-menu");
+const titleOptionsPanel = document.getElementById("title-options-panel");
+const titleOptionsBack = document.getElementById("title-options-back");
+
+if (titleScreen) {
+  titleScreen.addEventListener("click", (e) => {
+    if (!titleScreen.classList.contains("show-menu")) {
+      titleScreen.classList.add("show-menu");
+      e.preventDefault();
+      return;
+    }
+  });
+}
+
 window.addEventListener("keydown", (e) => {
-  if (titleScreenActive) {
+  if (!titleScreenActive) return;
+  if (!titleScreen.classList.contains("show-menu")) {
+    titleScreen.classList.add("show-menu");
     e.preventDefault();
-    startFromTitleScreen();
+    return;
+  }
+  if (titleOptionsPanel && !titleOptionsPanel.classList.contains("hidden")) {
+    if (e.key === "Escape") {
+      titleOptionsPanel.classList.add("hidden");
+      e.preventDefault();
+    }
+    return;
   }
 });
+
+if (titleMainMenu) {
+  titleMainMenu.addEventListener("click", (e) => {
+    const btn = e.target.closest(".title-menu-btn[data-menu]");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const menu = btn.getAttribute("data-menu");
+    if (menu === "campaign") {
+      startFromTitleScreen("campaign");
+    } else if (menu === "endless") {
+      startFromTitleScreen("endless");
+    } else if (menu === "options") {
+      if (titleOptionsPanel) titleOptionsPanel.classList.remove("hidden");
+    } else if (menu === "exit") {
+      titleScreen.classList.remove("show-menu");
+    }
+  });
+}
+
+if (titleOptionsBack) {
+  titleOptionsBack.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (titleOptionsPanel) titleOptionsPanel.classList.add("hidden");
+  });
+}
+
+startTitleMusic();
+
+const titleMusicToggle = document.getElementById("title-music-toggle");
+const titleMusicToggleIcon = document.querySelector(".title-music-toggle-icon");
+if (titleMusicToggle && titleMusic && titleMusicToggleIcon) {
+  function updateMusicToggleLabel() {
+    const muted = titleMusic.muted;
+    titleMusicToggle.classList.toggle("is-muted", muted);
+    titleMusicToggleIcon.textContent = muted ? "🔇" : "🔊";
+    titleMusicToggle.setAttribute("aria-label", muted ? "Unmute music" : "Mute music");
+    titleMusicToggle.setAttribute("title", muted ? "Unmute music" : "Mute music");
+  }
+  titleMusicToggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    titleMusic.muted = !titleMusic.muted;
+    if (!titleMusic.muted) {
+      const p = titleMusic.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+    updateMusicToggleLabel();
+  });
+  updateMusicToggleLabel();
+}
 
 if (titleFlamesCtx) requestAnimationFrame(drawFlames);
 

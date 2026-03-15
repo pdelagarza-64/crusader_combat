@@ -161,6 +161,136 @@ body {
   pointer-events: none;
 }
 
+.title-music-toggle {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(200, 180, 120, 0.4);
+  border-radius: 6px;
+  background: rgba(20, 18, 14, 0.85);
+  color: #c8b478;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.title-music-toggle:hover {
+  background: rgba(40, 36, 28, 0.95);
+  border-color: rgba(200, 180, 120, 0.6);
+  color: #e0d0a0;
+}
+
+.title-music-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(200, 180, 120, 0.5);
+}
+
+.title-music-toggle.is-muted .title-music-toggle-icon {
+  opacity: 0.6;
+}
+
+.title-music-toggle .title-music-toggle-icon {
+  line-height: 1;
+}
+
+/* Main menu (after "press any key") */
+.title-screen .title-main-menu {
+  display: none;
+}
+
+.title-screen.show-menu .title-screen-content {
+  display: none;
+}
+
+.title-screen.show-menu .title-main-menu {
+  display: flex;
+}
+
+.title-main-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.title-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.title-menu-btn {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 700;
+  font-size: clamp(18px, 4vw, 24px);
+  letter-spacing: 0.12em;
+  color: #c8b478;
+  background: transparent;
+  border: 1px solid rgba(200, 180, 120, 0.35);
+  padding: 12px 32px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  min-width: 200px;
+}
+
+.title-menu-btn:hover {
+  background: rgba(40, 36, 28, 0.6);
+  border-color: rgba(200, 180, 120, 0.6);
+  color: #e0d0a0;
+}
+
+.title-menu-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(200, 180, 120, 0.5);
+}
+
+/* Options subpanel */
+.title-options-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  pointer-events: auto;
+  background: rgba(10, 6, 0, 0.85);
+}
+
+.title-options-panel.hidden {
+  display: none;
+}
+
+.title-options-heading {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: #c8b478;
+  margin: 0;
+}
+
+.title-options-placeholder {
+  color: #908870;
+  font-size: 14px;
+  margin: 0;
+}
+
 .title-metal-wrap {
   margin-bottom: 20px;
   filter: drop-shadow(0 12px 8px rgba(0, 0, 0, 0.55))
