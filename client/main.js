@@ -1031,8 +1031,106 @@ class Game {
   }
 }
 
+// ---------- Title screen with animated flames ----------
+const titleScreen = document.getElementById("title-screen");
+const titleFlamesCanvas = document.getElementById("title-flames");
+const titleFlamesCtx = titleFlamesCanvas ? titleFlamesCanvas.getContext("2d") : null;
+
+let flameTime = 0;
+let titleScreenActive = true;
+
+function resizeTitleFlames() {
+  if (!titleFlamesCanvas || !titleFlamesCtx) return;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  titleFlamesCanvas.width = w * scale;
+  titleFlamesCanvas.height = h * scale;
+  titleFlamesCanvas.style.width = w + "px";
+  titleFlamesCanvas.style.height = h + "px";
+  titleFlamesCtx.setTransform(scale, 0, 0, scale, 0, 0);
+}
+if (titleFlamesCanvas) {
+  resizeTitleFlames();
+  window.addEventListener("resize", resizeTitleFlames);
+}
+
+function drawFlames() {
+  if (!titleFlamesCtx || !titleScreenActive) return;
+
+  flameTime += 0.025;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  const baseGrad = titleFlamesCtx.createLinearGradient(0, h, 0, 0);
+  baseGrad.addColorStop(0, "#0a0400");
+  baseGrad.addColorStop(0.15, "#1a0800");
+  baseGrad.addColorStop(0.35, "#4a1800");
+  baseGrad.addColorStop(0.55, "#8a3000");
+  baseGrad.addColorStop(0.75, "#c85000");
+  baseGrad.addColorStop(0.9, "#e87820");
+  baseGrad.addColorStop(1, "#2a1000");
+  titleFlamesCtx.fillStyle = baseGrad;
+  titleFlamesCtx.fillRect(0, 0, w, h);
+
+  const layerCount = 12;
+  for (let i = 0; i < layerCount; i++) {
+    const phase = (i / layerCount) * Math.PI * 2 + flameTime * 2;
+    const yBase = h * (0.4 + 0.5 * (i / layerCount)) + Math.sin(flameTime + i * 0.7) * 15;
+    const xOff = Math.sin(flameTime * 1.3 + i * 0.5) * 80 + Math.cos(flameTime * 0.8) * 40;
+    const peak = 80 + Math.sin(flameTime + i) * 40;
+    const grad = titleFlamesCtx.createRadialGradient(
+      w / 2 + xOff, yBase + peak, 0,
+      w / 2 + xOff, yBase + peak, 120 + i * 25
+    );
+    const alpha = 0.15 + 0.12 * (Math.sin(phase) * 0.5 + 0.5);
+    grad.addColorStop(0, `rgba(255, 180, 80, ${alpha})`);
+    grad.addColorStop(0.4, `rgba(220, 100, 20, ${alpha * 0.6})`);
+    grad.addColorStop(0.8, "rgba(120, 40, 0, 0)");
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    titleFlamesCtx.fillStyle = grad;
+    titleFlamesCtx.fillRect(0, 0, w, h);
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const t = flameTime + i * 0.8;
+    const x = (w / 2) + Math.sin(t) * 200 + Math.cos(t * 0.6) * 100;
+    const y = h - 60 + (i % 3) * 25 + Math.sin(t * 1.2) * 20;
+    const r = 60 + Math.sin(t * 0.9) * 25;
+    const grad = titleFlamesCtx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, "rgba(255, 200, 100, 0.35)");
+    grad.addColorStop(0.5, "rgba(240, 120, 40, 0.2)");
+    grad.addColorStop(1, "rgba(80, 20, 0, 0)");
+    titleFlamesCtx.fillStyle = grad;
+    titleFlamesCtx.beginPath();
+    titleFlamesCtx.ellipse(x, y, r * 0.8, r, 0, 0, Math.PI * 2);
+    titleFlamesCtx.fill();
+  }
+
+  requestAnimationFrame(drawFlames);
+}
+
+function startFromTitleScreen() {
+  if (!titleScreenActive) return;
+  titleScreenActive = false;
+  if (titleScreen) titleScreen.classList.add("hidden");
+  canvas.focus();
+  game.start();
+}
+
+if (titleScreen) {
+  titleScreen.addEventListener("click", startFromTitleScreen);
+}
+window.addEventListener("keydown", (e) => {
+  if (titleScreenActive) {
+    e.preventDefault();
+    startFromTitleScreen();
+  }
+});
+
+if (titleFlamesCtx) requestAnimationFrame(drawFlames);
+
 const game = new Game();
-game.start();
 
 ui.playAgainBtn.addEventListener("click", () => {
   game.reset();
