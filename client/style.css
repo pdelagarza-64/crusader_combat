@@ -163,47 +163,54 @@ body {
 
 .title-metal-wrap {
   margin-bottom: 20px;
-  /* One cast shadow: the title floats in space. No stacked copies. */
   filter: drop-shadow(0 12px 8px rgba(0, 0, 0, 0.55))
           drop-shadow(0 24px 32px rgba(0, 0, 0, 0.35));
 }
 
-.title-metal {
+/* Elden Ring–style title: SVG wordmark, two lines, art-directed */
+.title-logo {
+  display: block;
+  width: min(94vw, 720px);
+  height: auto;
+  margin: 0 auto;
+}
+
+.title-logo-line {
   font-family: "Cinzel", "Times New Roman", serif;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 900;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  margin: 0;
-  color: transparent;
-  /*
-   * 3D by lighting, not by stacking.
-   * Key light from top-left (145deg): bright top-left, dark bottom-right.
-   * Fire fill from below in the shadow side.
-   */
-  background: linear-gradient(
-    145deg,
-    #4c4842 0%,
-    #403c36 18%,
-    #343028 38%,
-    #2c2822 58%,
-    #282420 75%,
-    #322a24 88%,
-    #4a3830 96%,
-    #5a4438 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter: url(#cast-iron-grain);
-  /*
-   * Specular edge only: one soft highlight on the lit edge (top).
-   * No second letter, no extrusion — just a hint of bevel.
-   */
-  text-shadow:
-    0 0 2px rgba(255, 252, 248, 0.25),
-    0 1px 0 rgba(255, 255, 255, 0.12);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-size: 36px;
+  letter-spacing: 0.28em;
+}
+
+.title-orange-layer {
+  animation: title-fire-reflection 2.1s steps(4, end) infinite;
+  pointer-events: none;
+}
+
+.title-white-layer {
+  pointer-events: none;
+}
+
+.title-top-white {
+  pointer-events: none;
+}
+
+@keyframes title-fire-reflection {
+  0% { opacity: 0.92; }
+  8% { opacity: 0.48; }
+  12% { opacity: 1; }
+  22% { opacity: 0.55; }
+  28% { opacity: 0.88; }
+  35% { opacity: 0.42; }
+  42% { opacity: 1; }
+  52% { opacity: 0.62; }
+  58% { opacity: 0.95; }
+  65% { opacity: 0.38; }
+  72% { opacity: 0.82; }
+  80% { opacity: 0.52; }
+  88% { opacity: 1; }
+  95% { opacity: 0.58; }
+  100% { opacity: 0.9; }
 }
 
 .title-subtitle {
