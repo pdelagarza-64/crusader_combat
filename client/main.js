@@ -1025,6 +1025,9 @@ class Game {
     const finalScore = Math.round(this.knight.score);
     const survivedSeconds = Math.floor(this.time);
     ui.overlayMessage.textContent = `Score: ${finalScore} · Time: ${survivedSeconds}s`;
+    if (typeof currentCrusaderName !== "undefined" && ui.playerNameInput) {
+      ui.playerNameInput.value = currentCrusaderName;
+    }
     ui.overlay.classList.remove("hidden");
     this.updateHud();
     this.lastResult = { score: finalScore, survivedSeconds };
@@ -1175,18 +1178,117 @@ function startFromTitleScreen(mode) {
   game.start(mode);
 }
 
+const CRUSADER_STORAGE_KEY = "crusader_characters";
+
+function getCrusaderCharacters() {
+  try {
+    const raw = localStorage.getItem(CRUSADER_STORAGE_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCrusaderCharacter(name, score) {
+  const list = getCrusaderCharacters();
+  const trimmed = (name || "").trim() || "Anonymous";
+  const existing = list.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+  const highScore = Math.max(existing ? existing.highScore : 0, score);
+  const rest = list.filter((c) => c.name.toLowerCase() !== trimmed.toLowerCase());
+  rest.push({ name: trimmed, highScore });
+  rest.sort((a, b) => b.highScore - a.highScore);
+  try {
+    localStorage.setItem(CRUSADER_STORAGE_KEY, JSON.stringify(rest));
+  } catch (e) {
+    console.warn("Could not save crusader list", e);
+  }
+}
+
+let currentCrusaderName = "";
+
 const titleMainMenu = document.getElementById("title-main-menu");
 const titleOptionsPanel = document.getElementById("title-options-panel");
 const titleOptionsBack = document.getElementById("title-options-back");
+const titleNameScreen = document.getElementById("title-name-screen");
+const titleNameList = document.getElementById("title-name-list");
+const titleNameInput = document.getElementById("title-name-input");
+const titleNameContinue = document.getElementById("title-name-continue");
+
+function renderCrusaderList() {
+  if (!titleNameList) return;
+  const chars = getCrusaderCharacters();
+  titleNameList.innerHTML = "";
+  chars.forEach((c) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "title-name-char-btn";
+    btn.innerHTML = `<span>${escapeHtml(c.name)}</span><span class="char-score">${Math.round(c.highScore)} pts</span>`;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      currentCrusaderName = c.name;
+      titleScreen.classList.remove("show-name");
+      titleScreen.classList.add("show-menu");
+    });
+    li.appendChild(btn);
+    titleNameList.appendChild(li);
+  });
+}
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function goToNameScreen() {
+  renderCrusaderList();
+  if (titleNameInput) {
+    titleNameInput.value = "";
+    titleNameContinue.disabled = true;
+  }
+}
+
+if (titleNameInput) {
+  titleNameInput.addEventListener("input", () => {
+    if (titleNameContinue) titleNameContinue.disabled = !titleNameInput.value.trim();
+  });
+  titleNameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (titleNameInput.value.trim()) titleNameContinue.click();
+    }
+  });
+}
+
+if (titleNameContinue) {
+  titleNameContinue.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const name = titleNameInput.value.trim();
+    if (!name) return;
+    currentCrusaderName = name;
+    const list = getCrusaderCharacters();
+    if (!list.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      saveCrusaderCharacter(name, 0);
+    }
+    titleScreen.classList.remove("show-name");
+    titleScreen.classList.add("show-menu");
+  });
+}
 
 const VOLUME_MEDIA_KEYS = new Set(["VolumeUp", "VolumeDown", "VolumeMute", "AudioVolumeUp", "AudioVolumeDown", "AudioVolumeMute"]);
 
 if (titleScreen) {
   titleScreen.addEventListener("click", (e) => {
     if (e.target.closest("#title-music-toggle")) return;
-    if (!titleScreen.classList.contains("show-menu")) {
+    if (!titleScreen.classList.contains("show-menu") && !titleScreen.classList.contains("show-name")) {
       startTitleMusic();
-      titleScreen.classList.add("show-menu");
+      titleScreen.classList.add("show-name");
+      goToNameScreen();
       e.preventDefault();
       return;
     }
@@ -1196,9 +1298,10 @@ if (titleScreen) {
 window.addEventListener("keydown", (e) => {
   if (!titleScreenActive) return;
   if (VOLUME_MEDIA_KEYS.has(e.key)) return;
-  if (!titleScreen.classList.contains("show-menu")) {
+  if (!titleScreen.classList.contains("show-menu") && !titleScreen.classList.contains("show-name")) {
     startTitleMusic();
-    titleScreen.classList.add("show-menu");
+    titleScreen.classList.add("show-name");
+    goToNameScreen();
     e.preventDefault();
     return;
   }
@@ -1226,6 +1329,7 @@ if (titleMainMenu) {
       if (titleOptionsPanel) titleOptionsPanel.classList.remove("hidden");
     } else if (menu === "exit") {
       titleScreen.classList.remove("show-menu");
+      titleScreen.classList.remove("show-name");
     }
   });
 }
@@ -1285,6 +1389,7 @@ ui.saveScoreBtn.addEventListener("click", async () => {
         survivedSeconds: game.lastResult.survivedSeconds
       })
     });
+    saveCrusaderCharacter(name, game.lastResult.score);
     await fetchLeaderboard();
   } catch (err) {
     console.error("Failed to save score", err);

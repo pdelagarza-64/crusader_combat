@@ -105,6 +105,18 @@
         </div>
         <p class="title-subtitle">Press any key or click to begin</p>
       </div>
+      <div id="title-name-screen" class="title-name-screen" aria-label="Choose your Crusader">
+        <h2 class="title-name-heading">Your Crusader's Name</h2>
+        <div id="title-name-list-wrap" class="title-name-list-wrap">
+          <p class="title-name-list-label">Select a Crusader</p>
+          <ul id="title-name-list" class="title-name-list"></ul>
+        </div>
+        <div class="title-name-new-wrap">
+          <label for="title-name-input" class="title-name-new-label">Or create a new Crusader</label>
+          <input type="text" id="title-name-input" class="title-name-input" maxlength="16" placeholder="Enter name" autocomplete="off" />
+          <button type="button" id="title-name-continue" class="title-menu-btn" disabled>Continue</button>
+        </div>
+      </div>
       <nav id="title-main-menu" class="title-main-menu" aria-label="Main menu">
         <ul class="title-menu-list">
           <li><button type="button" class="title-menu-btn" data-menu="campaign">Campaign</button></li>

@@ -201,17 +201,147 @@ body {
   line-height: 1;
 }
 
-/* Main menu (after "press any key") */
+/* Crusader name screen (after "press any key") */
+.title-screen .title-name-screen {
+  display: none;
+}
+
+.title-screen.show-name .title-screen-content {
+  display: none;
+}
+
+.title-screen.show-name .title-name-screen {
+  display: flex;
+}
+
+/* Main menu (after name selected) */
 .title-screen .title-main-menu {
   display: none;
 }
 
-.title-screen.show-menu .title-screen-content {
+.title-screen.show-menu .title-screen-content,
+.title-screen.show-menu .title-name-screen {
   display: none;
 }
 
 .title-screen.show-menu .title-main-menu {
   display: flex;
+}
+
+.title-name-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  pointer-events: auto;
+  padding: 24px;
+}
+
+.title-name-heading {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 700;
+  font-size: clamp(20px, 4vw, 26px);
+  letter-spacing: 0.12em;
+  color: #c8b478;
+  margin: 0 0 8px 0;
+}
+
+.title-name-list-wrap {
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 260px;
+  max-width: 90vw;
+}
+
+.title-name-list-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #908870;
+  margin: 0 0 8px 0;
+}
+
+.title-name-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title-name-list li {
+  margin: 0;
+}
+
+.title-name-char-btn {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: #c8b478;
+  background: rgba(20, 18, 14, 0.8);
+  border: 1px solid rgba(200, 180, 120, 0.35);
+  padding: 10px 20px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-name-char-btn:hover {
+  background: rgba(40, 36, 28, 0.9);
+  border-color: rgba(200, 180, 120, 0.6);
+  color: #e0d0a0;
+}
+
+.title-name-char-btn .char-score {
+  font-size: 12px;
+  color: #908870;
+  font-weight: 600;
+}
+
+.title-name-new-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.title-name-new-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #908870;
+}
+
+.title-name-input {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-size: 16px;
+  padding: 10px 16px;
+  width: 100%;
+  max-width: 280px;
+  background: rgba(20, 18, 14, 0.9);
+  border: 1px solid rgba(200, 180, 120, 0.4);
+  border-radius: 4px;
+  color: #e0d0a0;
+}
+
+.title-name-input::placeholder {
+  color: #6a6050;
+}
+
+.title-name-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(200, 180, 120, 0.4);
 }
 
 .title-main-menu {
