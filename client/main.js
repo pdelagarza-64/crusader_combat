@@ -1378,6 +1378,52 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+const campaignCinematic = document.getElementById("campaign-cinematic");
+const campaignPanels = document.querySelectorAll(".campaign-panel");
+const CAMPAIGN_PANEL_COUNT = campaignPanels ? campaignPanels.length : 0;
+
+function showCampaignCinematic() {
+  if (!campaignCinematic || !campaignPanels.length) {
+    startFromTitleScreen("campaign");
+    return;
+  }
+  campaignCinematic.classList.remove("hidden");
+  let currentPanel = 0;
+  campaignPanels.forEach((p, i) => p.classList.toggle("active", i === 0));
+
+  function advance() {
+    campaignPanels[currentPanel].classList.remove("active");
+    currentPanel++;
+    if (currentPanel >= CAMPAIGN_PANEL_COUNT) {
+      campaignCinematic.classList.add("hidden");
+      removeAdvanceListeners();
+      startFromTitleScreen("campaign");
+      return;
+    }
+    campaignPanels[currentPanel].classList.add("active");
+  }
+
+  function removeAdvanceListeners() {
+    campaignCinematic.removeEventListener("click", onAdvanceClick);
+    window.removeEventListener("keydown", onAdvanceKey);
+  }
+
+  function onAdvanceClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    advance();
+  }
+
+  function onAdvanceKey(e) {
+    if (VOLUME_MEDIA_KEYS.has(e.key)) return;
+    e.preventDefault();
+    advance();
+  }
+
+  campaignCinematic.addEventListener("click", onAdvanceClick);
+  window.addEventListener("keydown", onAdvanceKey, { once: false });
+}
+
 if (titleMainMenu) {
   titleMainMenu.addEventListener("click", (e) => {
     const btn = e.target.closest(".title-menu-btn[data-menu]");
@@ -1386,7 +1432,7 @@ if (titleMainMenu) {
     e.stopPropagation();
     const menu = btn.getAttribute("data-menu");
     if (menu === "campaign") {
-      startFromTitleScreen("campaign");
+      showCampaignCinematic();
     } else if (menu === "endless") {
       startFromTitleScreen("endless");
     } else if (menu === "options") {

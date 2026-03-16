@@ -412,6 +412,308 @@ body {
   color: #e0a090;
 }
 
+/* Campaign cinematic – comic book style */
+.campaign-cinematic {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: #1a1208;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.campaign-cinematic.hidden {
+  display: none;
+}
+
+.campaign-cinematic-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.campaign-panel {
+  position: absolute;
+  inset: 24px;
+  display: none;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: #2a2012;
+  border: 5px solid #0a0804;
+  box-shadow:
+    inset 0 0 0 2px #0a0804,
+    4px 4px 0 #0a0804,
+    8px 8px 0 rgba(0, 0, 0, 0.4);
+}
+
+.campaign-panel.active {
+  display: flex;
+  animation: campaign-panel-in 0.4s ease-out;
+}
+
+@keyframes campaign-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.campaign-panel-border {
+  position: absolute;
+  inset: -3px;
+  border: 3px solid #0a0804;
+  pointer-events: none;
+}
+
+.campaign-panel-caption {
+  position: relative;
+  z-index: 2;
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 700;
+  font-size: clamp(14px, 2.8vw, 22px);
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #0a0804;
+  background: #f0e0a0;
+  padding: 14px 24px;
+  margin: 20px;
+  border: 4px solid #0a0804;
+  box-shadow: 4px 4px 0 #0a0804;
+}
+
+.campaign-panel-cta {
+  text-transform: none;
+  letter-spacing: 0.08em;
+  font-size: clamp(12px, 2.2vw, 18px);
+  background: #fff8d0;
+}
+
+.campaign-panel-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.campaign-svg {
+  position: absolute;
+  height: 55%;
+  max-height: 320px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(4px 6px 8px rgba(0, 0, 0, 0.5));
+}
+
+.campaign-panel-art-1 {
+  background: linear-gradient(180deg, #3a3428 0%, #2a2418 50%, #1a1410 100%);
+}
+
+.campaign-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 100% 60% at 50% 20%, rgba(60, 50, 35, 0.6) 0%, transparent 60%);
+}
+
+.campaign-crusader-walk {
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  animation: campaign-walk 3s ease-in-out infinite;
+}
+
+.campaign-svg-cape {
+  transform-origin: 70px 35px;
+  animation: campaign-cape-sway 2.5s ease-in-out infinite;
+}
+
+@keyframes campaign-walk {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(4px); }
+}
+
+@keyframes campaign-cape-sway {
+  0%, 100% { transform: skewX(0deg); }
+  50% { transform: skewX(3deg); }
+}
+
+.campaign-panel-art-2 {
+  background: linear-gradient(180deg, #4a4030 0%, #3a3020 40%, #2a2014 100%);
+}
+
+.campaign-sun {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f0e8c0, #e0c860 40%, #c89830 100%);
+  box-shadow: 0 0 60px rgba(230, 180, 80, 0.6);
+  animation: campaign-sun-pulse 4s ease-in-out infinite;
+}
+
+.campaign-sun-glow {
+  animation: campaign-sun-pulse 4s ease-in-out infinite;
+}
+
+@keyframes campaign-sun-pulse {
+  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.9; transform: translateX(-50%) scale(1.08); }
+}
+
+.campaign-road {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28%;
+  background: linear-gradient(180deg, transparent 0%, #2a2018 20%, #1a1410 100%);
+  clip-path: polygon(15% 100%, 35% 40%, 65% 40%, 85% 100%);
+  animation: campaign-road-shine 5s linear infinite;
+}
+
+@keyframes campaign-road-shine {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.campaign-crusader-pilgrim {
+  left: 28%;
+  bottom: 20%;
+  transform: translateX(0);
+  animation: campaign-pilgrim-move 6s ease-in-out infinite;
+}
+
+@keyframes campaign-pilgrim-move {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(8px) translateY(-2px); }
+}
+
+.campaign-cross-distant {
+  right: 18%;
+  bottom: 22%;
+  left: auto;
+  height: 35%;
+  opacity: 0.9;
+  animation: campaign-cross-glow 5s ease-in-out infinite;
+}
+
+@keyframes campaign-cross-glow {
+  0%, 100% { opacity: 0.85; filter: drop-shadow(4px 6px 8px rgba(0,0,0,0.5)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(200,180,100,0.3)); }
+}
+
+.campaign-panel-art-3 {
+  background: linear-gradient(180deg, #2a1512 0%, #1a0c08 50%, #0a0804 100%);
+}
+
+.campaign-demon-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 100% 70% at 50% 20%, rgba(80, 20, 20, 0.4) 0%, transparent 55%);
+  animation: campaign-demon-sky-pulse 3s ease-in-out infinite;
+}
+
+@keyframes campaign-demon-sky-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.campaign-demon {
+  height: 42%;
+  max-height: 200px;
+}
+
+.campaign-demon-1 { left: 18%; bottom: 22%; }
+.campaign-demon-2 { left: 50%; bottom: 18%; transform: translateX(-50%); }
+.campaign-demon-3 { right: 18%; bottom: 24%; left: auto; }
+
+.campaign-demon .demon-eye {
+  animation: campaign-demon-eye 1.5s ease-in-out infinite;
+}
+
+@keyframes campaign-demon-eye {
+  0%, 100% { opacity: 1; fill: #5a2020; }
+  50% { opacity: 0.6; fill: #8a3030; }
+}
+
+.campaign-demon-2 .demon-eye { animation-delay: 0.3s; }
+.campaign-demon-3 .demon-eye { animation-delay: 0.6s; }
+
+.campaign-panel-art-4 {
+  background: linear-gradient(180deg, #1a1410 0%, #0a0804 100%);
+}
+
+.campaign-light-break {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(240, 220, 160, 0.15) 0%, transparent 50%);
+  animation: campaign-light-break 3s ease-in-out infinite;
+}
+
+@keyframes campaign-light-break {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.campaign-crusader-hero {
+  left: 50%;
+  bottom: 15%;
+  transform: translateX(-50%);
+  animation: campaign-hero-hold 2.5s ease-in-out infinite;
+}
+
+@keyframes campaign-hero-hold {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.02); }
+}
+
+.campaign-panel-art-5 {
+  background: linear-gradient(180deg, #2a2418 0%, #1a1008 100%);
+}
+
+.campaign-crusader-ready {
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  animation: campaign-ready-idle 2s ease-in-out infinite;
+}
+
+@keyframes campaign-ready-idle {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(3px); }
+}
+
+.campaign-panel-last .campaign-panel-caption {
+  animation: campaign-cta-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes campaign-cta-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.88; }
+}
+
+.campaign-cinematic-halftone {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: radial-gradient(circle at center, #0a0804 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
 .title-main-menu {
   position: absolute;
   inset: 0;
