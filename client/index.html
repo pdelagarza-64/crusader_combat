@@ -116,6 +116,14 @@
           <input type="text" id="title-name-input" class="title-name-input" maxlength="16" placeholder="Enter name" autocomplete="off" />
           <button type="button" id="title-name-continue" class="title-menu-btn" disabled>Continue</button>
         </div>
+        <button type="button" id="title-name-erase" class="title-name-erase-btn" disabled>Erase progress</button>
+      </div>
+      <div id="title-erase-confirm" class="title-erase-confirm hidden" aria-label="Confirm erase">
+        <p class="title-erase-confirm-msg">Are you sure? This cannot be undone.</p>
+        <div class="title-erase-confirm-btns">
+          <button type="button" id="title-erase-cancel" class="title-menu-btn">Cancel</button>
+          <button type="button" id="title-erase-confirm-btn" class="title-menu-btn title-erase-confirm-erase">Erase</button>
+        </div>
       </div>
       <nav id="title-main-menu" class="title-main-menu" aria-label="Main menu">
         <ul class="title-menu-list">

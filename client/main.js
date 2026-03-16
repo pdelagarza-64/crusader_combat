@@ -560,8 +560,16 @@ function isTypingInOverlay() {
   return el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
 }
 
+function isTypingInTitleInput() {
+  const el = document.activeElement;
+  if (!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) return false;
+  const titleEl = document.getElementById("title-screen");
+  return titleEl && titleEl.contains(el);
+}
+
 window.addEventListener("keydown", e => {
   if (isTypingInOverlay()) return;
+  if (isTypingInTitleInput()) return;
   if (isGameKey(e.code)) e.preventDefault();
 
   if (e.code === "KeyA") keys.left = true;
@@ -574,6 +582,7 @@ window.addEventListener("keydown", e => {
 
 window.addEventListener("keyup", e => {
   if (isTypingInOverlay()) return;
+  if (isTypingInTitleInput()) return;
   if (isGameKey(e.code)) e.preventDefault();
 
   if (e.code === "KeyA") keys.left = false;
@@ -1206,6 +1215,14 @@ function saveCrusaderCharacter(name, score) {
   }
 }
 
+function clearAllCrusaderProgress() {
+  try {
+    localStorage.setItem(CRUSADER_STORAGE_KEY, "[]");
+  } catch (e) {
+    console.warn("Could not clear crusader list", e);
+  }
+}
+
 let currentCrusaderName = "";
 
 const titleMainMenu = document.getElementById("title-main-menu");
@@ -1215,6 +1232,10 @@ const titleNameScreen = document.getElementById("title-name-screen");
 const titleNameList = document.getElementById("title-name-list");
 const titleNameInput = document.getElementById("title-name-input");
 const titleNameContinue = document.getElementById("title-name-continue");
+const titleNameErase = document.getElementById("title-name-erase");
+const titleEraseConfirm = document.getElementById("title-erase-confirm");
+const titleEraseCancel = document.getElementById("title-erase-cancel");
+const titleEraseConfirmBtn = document.getElementById("title-erase-confirm-btn");
 
 function renderCrusaderList() {
   if (!titleNameList) return;
@@ -1236,6 +1257,22 @@ function renderCrusaderList() {
     li.appendChild(btn);
     titleNameList.appendChild(li);
   });
+  if (titleNameErase) {
+    if (chars.length === 0) {
+      titleNameErase.setAttribute("disabled", "");
+    } else {
+      titleNameErase.removeAttribute("disabled");
+    }
+  }
+  const listLabel = titleNameScreen ? titleNameScreen.querySelector(".title-name-list-label") : null;
+  const newLabel = titleNameScreen ? titleNameScreen.querySelector(".title-name-new-label") : null;
+  if (listLabel) {
+    listLabel.textContent = chars.length === 0 ? "" : "Select a Crusader";
+    listLabel.style.display = chars.length === 0 ? "none" : "";
+  }
+  if (newLabel) {
+    newLabel.textContent = chars.length === 0 ? "Create a new Crusader" : "Or create a new Crusader";
+  }
 }
 
 function escapeHtml(s) {
@@ -1277,6 +1314,33 @@ if (titleNameContinue) {
     }
     titleScreen.classList.remove("show-name");
     titleScreen.classList.add("show-menu");
+  });
+}
+
+if (titleNameErase) {
+  titleNameErase.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (titleNameErase.hasAttribute("disabled")) return;
+    if (titleEraseConfirm) titleEraseConfirm.classList.remove("hidden");
+  });
+}
+
+if (titleEraseCancel) {
+  titleEraseCancel.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (titleEraseConfirm) titleEraseConfirm.classList.add("hidden");
+  });
+}
+
+if (titleEraseConfirmBtn) {
+  titleEraseConfirmBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearAllCrusaderProgress();
+    renderCrusaderList();
+    if (titleEraseConfirm) titleEraseConfirm.classList.add("hidden");
   });
 }
 
