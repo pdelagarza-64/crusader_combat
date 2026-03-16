@@ -1179,9 +1179,13 @@ const titleMainMenu = document.getElementById("title-main-menu");
 const titleOptionsPanel = document.getElementById("title-options-panel");
 const titleOptionsBack = document.getElementById("title-options-back");
 
+const VOLUME_MEDIA_KEYS = new Set(["VolumeUp", "VolumeDown", "VolumeMute", "AudioVolumeUp", "AudioVolumeDown", "AudioVolumeMute"]);
+
 if (titleScreen) {
   titleScreen.addEventListener("click", (e) => {
+    if (e.target.closest("#title-music-toggle")) return;
     if (!titleScreen.classList.contains("show-menu")) {
+      startTitleMusic();
       titleScreen.classList.add("show-menu");
       e.preventDefault();
       return;
@@ -1191,7 +1195,9 @@ if (titleScreen) {
 
 window.addEventListener("keydown", (e) => {
   if (!titleScreenActive) return;
+  if (VOLUME_MEDIA_KEYS.has(e.key)) return;
   if (!titleScreen.classList.contains("show-menu")) {
+    startTitleMusic();
     titleScreen.classList.add("show-menu");
     e.preventDefault();
     return;
