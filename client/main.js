@@ -859,11 +859,12 @@ const keys = {
   up: false,
   keyW: false,
   space: false,
+  arrowUp: false,
   attack: false,
   block: false
 };
 
-const GAME_KEY_CODES = ["KeyA", "KeyD", "KeyW", "Space", "KeyJ", "KeyK"];
+const GAME_KEY_CODES = ["KeyA", "KeyD", "KeyW", "Space", "ArrowUp", "KeyJ", "KeyK"];
 
 function isGameKey(code) {
   return GAME_KEY_CODES.includes(code);
@@ -892,6 +893,7 @@ window.addEventListener("keydown", e => {
   if (e.code === "KeyD") keys.right = true;
   if (e.code === "KeyW") { keys.keyW = true; keys.up = true; }
   if (e.code === "Space") { keys.space = true; keys.up = true; }
+  if (e.code === "ArrowUp") { keys.arrowUp = true; keys.up = true; }
   if (e.code === "KeyJ") keys.attack = true;
   if (e.code === "KeyK") keys.block = true;
 });
@@ -903,8 +905,9 @@ window.addEventListener("keyup", e => {
 
   if (e.code === "KeyA") keys.left = false;
   if (e.code === "KeyD") keys.right = false;
-  if (e.code === "KeyW") { keys.keyW = false; keys.up = keys.space; }
-  if (e.code === "Space") { keys.space = false; keys.up = keys.keyW; }
+  if (e.code === "KeyW") { keys.keyW = false; keys.up = keys.space || keys.arrowUp; }
+  if (e.code === "Space") { keys.space = false; keys.up = keys.keyW || keys.arrowUp; }
+  if (e.code === "ArrowUp") { keys.arrowUp = false; keys.up = keys.keyW || keys.space; }
   if (e.code === "KeyJ") keys.attack = false;
   if (e.code === "KeyK") keys.block = false;
 });
@@ -988,7 +991,8 @@ class Knight extends Entity {
     if (this.vx > 10) this.facing = 1;
     else if (this.vx < -10) this.facing = -1;
 
-    if (keys.up && this.onGround) {
+    const wantJump = keys.up && this.onGround;
+    if (wantJump) {
       this.vy = jumpVelocity;
       this.onGround = false;
     }
