@@ -2902,10 +2902,13 @@ if (campaignStageBack) {
 const campaignTransitionCinematic = document.getElementById("campaign-transition-cinematic");
 const campaignTransitionPanels = document.querySelectorAll(".campaign-transition-panel");
 
+const CAMPAIGN_TRANSITION_MIN_VIEW_MS = 2500;
+
 function showCampaignTransitionCinematic(transitionIndex) {
   if (!campaignTransitionCinematic || transitionIndex < 0 || transitionIndex > 2) return;
   campaignTransitionPanels.forEach((p, i) => p.classList.toggle("active", i === transitionIndex));
   campaignTransitionCinematic.classList.remove("hidden");
+  const transitionStartTime = performance.now();
 
   function continueTransition() {
     campaignTransitionCinematic.classList.add("hidden");
@@ -2920,14 +2923,20 @@ function showCampaignTransitionCinematic(transitionIndex) {
     }
   }
 
+  function canSkip() {
+    return performance.now() - transitionStartTime >= CAMPAIGN_TRANSITION_MIN_VIEW_MS;
+  }
+
   function onTransitionClick(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (!canSkip()) return;
     continueTransition();
   }
   function onTransitionKey(e) {
     if (VOLUME_MEDIA_KEYS.has(e.key)) return;
     e.preventDefault();
+    if (!canSkip()) return;
     continueTransition();
   }
 
