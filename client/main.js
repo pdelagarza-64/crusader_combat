@@ -1910,16 +1910,218 @@ class Game {
     if (ui.time) ui.time.textContent = `${Math.floor(this.time)}s`;
   }
 
-  drawBackground(ctx) {
-    // Ensure background draws in screen space even if prior draws changed transforms.
+  drawBackground(ctx, campaignStage) {
     if (typeof ctx.setTransform === "function") ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+    const groundY = GAME_HEIGHT - 40;
+    const groundGrad = ctx.createLinearGradient(0, 0, 0, 50);
+    groundGrad.addColorStop(0, "#1a1c20");
+    groundGrad.addColorStop(0.5, "#0e1014");
+    groundGrad.addColorStop(1, "#06080a");
+    const drawGround = () => {
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, groundY, GAME_WIDTH, 40);
+      ctx.fillStyle = "#25282e";
+      ctx.fillRect(0, groundY, GAME_WIDTH, 3);
+      ctx.strokeStyle = "#0d0f12";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 12; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, groundY + i * 3.5);
+        ctx.lineTo(GAME_WIDTH, groundY + i * 3.5);
+        ctx.stroke();
+      }
+    };
+
+    if (campaignStage === 0) {
+      this.drawBackgroundStage1Dusk(ctx, groundY, drawGround);
+    } else if (campaignStage === 1) {
+      this.drawBackgroundStage2Walls(ctx, groundY, drawGround);
+    } else if (campaignStage === 2) {
+      this.drawBackgroundStage3Cathedral(ctx, groundY, drawGround);
+    } else {
+      this.drawBackgroundDefault(ctx, groundY, drawGround);
+    }
+
+    const vignette = ctx.createRadialGradient(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_HEIGHT * 0.25,
+      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.9
+    );
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(0.6, "rgba(0, 0, 0, 0.15)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.4)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  }
+
+  drawBackgroundStage1Dusk(ctx, groundY, drawGround) {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+    skyGrad.addColorStop(0, "#2a2438");
+    skyGrad.addColorStop(0.25, "#1e1828");
+    skyGrad.addColorStop(0.5, "#16121c");
+    skyGrad.addColorStop(0.85, "#0e0c12");
+    skyGrad.addColorStop(1, "#08060a");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const duskGlow = ctx.createLinearGradient(0, GAME_HEIGHT * 0.6, 0, GAME_HEIGHT);
+    duskGlow.addColorStop(0, "rgba(120, 80, 60, 0.25)");
+    duskGlow.addColorStop(0.4, "rgba(80, 50, 40, 0.12)");
+    duskGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = duskGlow;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const cityY = groundY - 80;
+    const cityH = 120;
+    ctx.fillStyle = "#0a0808";
+    ctx.beginPath();
+    ctx.moveTo(0, GAME_HEIGHT);
+    ctx.lineTo(0, cityY + cityH);
+    ctx.lineTo(GAME_WIDTH * 0.18, cityY + 60);
+    ctx.lineTo(GAME_WIDTH * 0.32, cityY + cityH);
+    ctx.lineTo(GAME_WIDTH * 0.45, cityY + 40);
+    ctx.lineTo(GAME_WIDTH * 0.55, cityY + 90);
+    ctx.lineTo(GAME_WIDTH * 0.68, cityY + 30);
+    ctx.lineTo(GAME_WIDTH * 0.82, cityY + 70);
+    ctx.lineTo(GAME_WIDTH, cityY + cityH * 0.8);
+    ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(30, 22, 28, 0.8)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "#121018";
+    ctx.fillRect(0, cityY + cityH - 20, GAME_WIDTH * 0.22, 24);
+    ctx.fillRect(GAME_WIDTH * 0.28, cityY + cityH - 35, GAME_WIDTH * 0.15, 40);
+    ctx.fillRect(GAME_WIDTH * 0.5, cityY + cityH - 28, GAME_WIDTH * 0.2, 32);
+    ctx.fillRect(GAME_WIDTH * 0.78, cityY + cityH - 22, GAME_WIDTH * 0.25, 26);
+    drawGround();
+  }
+
+  drawBackgroundStage2Walls(ctx, groundY, drawGround) {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+    skyGrad.addColorStop(0, "#1a0c0c");
+    skyGrad.addColorStop(0.3, "#280808");
+    skyGrad.addColorStop(0.6, "#180404");
+    skyGrad.addColorStop(1, "#0c0202");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const fireGlow = ctx.createRadialGradient(GAME_WIDTH / 2, GAME_HEIGHT + 80, 0, GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.8);
+    fireGlow.addColorStop(0, "rgba(255, 100, 30, 0.4)");
+    fireGlow.addColorStop(0.3, "rgba(200, 50, 20, 0.25)");
+    fireGlow.addColorStop(0.6, "rgba(120, 30, 10, 0.1)");
+    fireGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = fireGlow;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const wallW = 200;
+    ctx.fillStyle = "#1a1816";
+    ctx.fillRect(0, 0, wallW, GAME_HEIGHT);
+    ctx.fillStyle = "#141210";
+    ctx.fillRect(GAME_WIDTH - wallW, 0, wallW, GAME_HEIGHT);
+    ctx.strokeStyle = "#0a0806";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 35; i++) {
+      const py = (i / 35) * (GAME_HEIGHT + 80) - 10;
+      ctx.beginPath();
+      ctx.moveTo(0, py);
+      ctx.lineTo(wallW, py + 50);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(GAME_WIDTH - wallW, py + 50);
+      ctx.lineTo(GAME_WIDTH, py);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 12; i++) {
+      const px = (i / 12) * wallW;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px + 8, GAME_HEIGHT);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(GAME_WIDTH - wallW + px, 0);
+      ctx.lineTo(GAME_WIDTH - wallW + px + 8, GAME_HEIGHT);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(255, 80, 20, 0.15)";
+    ctx.fillRect(0, groundY - 60, wallW * 0.3, 80);
+    ctx.fillRect(GAME_WIDTH - wallW * 0.3, groundY - 80, wallW * 0.3, 100);
+    drawGround();
+  }
+
+  drawBackgroundStage3Cathedral(ctx, groundY, drawGround) {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+    skyGrad.addColorStop(0, "#1c1810");
+    skyGrad.addColorStop(0.4, "#242018");
+    skyGrad.addColorStop(0.8, "#181410");
+    skyGrad.addColorStop(1, "#0e0c08");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const pillarW = 42;
+    const pillarSpacing = GAME_WIDTH / 6;
+    for (let side = 0; side < 2; side++) {
+      const baseX = side === 0 ? 0 : GAME_WIDTH - pillarW;
+      for (let i = 0; i < 4; i++) {
+        const x = baseX + (side === 0 ? i * pillarSpacing : -i * pillarSpacing);
+        const grad = ctx.createLinearGradient(x, 0, x + pillarW, 0);
+        grad.addColorStop(0, "#2a2620");
+        grad.addColorStop(0.3, "#3a3630");
+        grad.addColorStop(0.7, "#3a3630");
+        grad.addColorStop(1, "#1e1a16");
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, 0, pillarW, GAME_HEIGHT);
+        ctx.strokeStyle = "#0a0806";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, 0, pillarW, GAME_HEIGHT);
+      }
+    }
+    const windowW = 80;
+    const windowH = 140;
+    const windows = [
+      { x: GAME_WIDTH * 0.12, y: 40 },
+      { x: GAME_WIDTH * 0.38, y: 30 },
+      { x: GAME_WIDTH * 0.62, y: 30 },
+      { x: GAME_WIDTH * 0.88, y: 40 }
+    ];
+    windows.forEach((w, i) => {
+      const g = ctx.createLinearGradient(w.x, w.y, w.x + windowW, w.y + windowH);
+      g.addColorStop(0, "rgba(255, 220, 120, 0.5)");
+      g.addColorStop(0.2, "rgba(255, 200, 80, 0.45)");
+      g.addColorStop(0.5, "rgba(255, 180, 60, 0.35)");
+      g.addColorStop(0.8, "rgba(200, 140, 40, 0.2)");
+      g.addColorStop(1, "rgba(160, 100, 30, 0.1)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(w.x + windowW / 2, w.y);
+      ctx.lineTo(w.x + windowW, w.y + windowH * 0.3);
+      ctx.lineTo(w.x + windowW, w.y + windowH);
+      ctx.lineTo(w.x, w.y + windowH);
+      ctx.lineTo(w.x, w.y + windowH * 0.3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "rgba(80, 60, 30, 0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "rgba(40, 30, 20, 0.5)";
+      ctx.beginPath();
+      ctx.moveTo(w.x + windowW / 2, w.y + 10);
+      ctx.lineTo(w.x + windowW / 2 + 2, w.y + windowH - 10);
+      ctx.moveTo(w.x + 10, w.y + windowH * 0.35);
+      ctx.lineTo(w.x + windowW - 10, w.y + windowH * 0.35);
+      ctx.stroke();
+    });
+    const goldenLight = ctx.createRadialGradient(GAME_WIDTH / 2, 0, 0, GAME_WIDTH / 2, 0, GAME_WIDTH * 0.7);
+    goldenLight.addColorStop(0, "rgba(255, 230, 180, 0.12)");
+    goldenLight.addColorStop(0.5, "rgba(255, 200, 120, 0.06)");
+    goldenLight.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = goldenLight;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    drawGround();
+  }
+
+  drawBackgroundDefault(ctx, groundY, drawGround) {
     const lightX = GAME_WIDTH * 0.35;
     const lightY = 20;
-
     const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
     skyGrad.addColorStop(0, "#2a2d32");
     skyGrad.addColorStop(0.3, "#1e2025");
@@ -1927,7 +2129,6 @@ class Game {
     skyGrad.addColorStop(1, "#0a0c0e");
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
     const lightGrad = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, 380);
     lightGrad.addColorStop(0, "rgba(255, 252, 245, 0.35)");
     lightGrad.addColorStop(0.15, "rgba(240, 236, 228, 0.18)");
@@ -1936,7 +2137,6 @@ class Game {
     lightGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = lightGrad;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
     const wallLeft = 0;
     const wallW = 140;
     ctx.fillStyle = "#0c0e12";
@@ -1967,33 +2167,7 @@ class Game {
       ctx.lineTo(GAME_WIDTH - 120 + (i % 5) * 28 + 24, GAME_HEIGHT);
       ctx.stroke();
     }
-
-    const groundGrad = ctx.createLinearGradient(0, 0, 0, 50);
-    groundGrad.addColorStop(0, "#1a1c20");
-    groundGrad.addColorStop(0.5, "#0e1014");
-    groundGrad.addColorStop(1, "#06080a");
-    ctx.fillStyle = groundGrad;
-    ctx.fillRect(0, GAME_HEIGHT - 40, GAME_WIDTH, 40);
-    ctx.fillStyle = "#25282e";
-    ctx.fillRect(0, GAME_HEIGHT - 40, GAME_WIDTH, 3);
-    ctx.strokeStyle = "#0d0f12";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 12; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, GAME_HEIGHT - 40 + i * 3.5);
-      ctx.lineTo(GAME_WIDTH, GAME_HEIGHT - 40 + i * 3.5);
-      ctx.stroke();
-    }
-
-    const vignette = ctx.createRadialGradient(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_HEIGHT * 0.25,
-      GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH * 0.9
-    );
-    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(0.6, "rgba(0, 0, 0, 0.15)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.4)");
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    drawGround();
   }
 
   draw(ctx) {
@@ -2003,7 +2177,8 @@ class Game {
     if (typeof ctx.setTransform === "function") ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
-    this.drawBackground(ctx);
+    const campaignStage = this.mode === "campaign" && this.campaignStageIndex >= 0 ? this.campaignStageIndex : -1;
+    this.drawBackground(ctx, campaignStage);
     this.drawGroundScars(ctx);
     this.drawShockwaves(ctx);
     if (this.knight) this.knight.draw(ctx);
