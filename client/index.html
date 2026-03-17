@@ -138,6 +138,15 @@
         <p class="title-options-placeholder">More options coming soon.</p>
         <button type="button" id="title-options-back" class="title-menu-btn">Back</button>
       </div>
+      <div id="campaign-stage-select" class="campaign-stage-select hidden" aria-label="Select stage">
+        <h2 class="campaign-stage-select-heading">Choose your battle</h2>
+        <ul class="campaign-stage-list">
+          <li><button type="button" class="title-menu-btn campaign-stage-btn" data-stage="0">The Road to Jerusalem</button></li>
+          <li><button type="button" class="title-menu-btn campaign-stage-btn" data-stage="1">The Gate of Jerusalem</button></li>
+          <li><button type="button" class="title-menu-btn campaign-stage-btn" data-stage="2">Inside the Holy Sepulcher</button></li>
+        </ul>
+        <button type="button" id="campaign-stage-back" class="title-menu-btn">Back</button>
+      </div>
       <div id="campaign-cinematic" class="campaign-cinematic hidden" aria-label="Campaign intro">
         <div class="campaign-cinematic-inner">
           <div class="campaign-panel active" data-panel="0">
@@ -326,6 +335,72 @@
     </div>
 
     <canvas id="game" width="960" height="540" tabindex="0"></canvas>
+
+    <div id="campaign-transition-cinematic" class="campaign-transition-cinematic hidden" aria-label="Campaign transition">
+      <div class="campaign-transition-inner">
+        <div class="campaign-transition-panel" data-transition="0">
+          <div class="campaign-transition-panel-border"></div>
+          <div class="campaign-transition-art campaign-transition-approach">
+            <div class="campaign-transition-sky"></div>
+            <div class="campaign-transition-road"></div>
+            <svg class="campaign-transition-svg campaign-crusader-silhouette" viewBox="0 0 120 200" aria-hidden="true">
+              <path fill="#2a2620" d="M40 20 L80 20 L82 28 L84 50 L80 56 L40 56 L38 50 L40 28 Z"/>
+              <path fill="#1a1814" d="M35 58 L32 198 L48 200 L52 60 Z"/>
+              <path fill="#1a1814" d="M68 60 L72 200 L88 198 L85 58 Z"/>
+              <path fill="#222018" d="M44 56 L38 58 L28 95 L34 98 L42 70 L52 56 Z"/>
+              <path fill="#2a2018" d="M24 58 L30 50 L48 46 L64 58 L48 165 L30 162 Z"/>
+              <path fill="#2a2420" d="M38 58 L34 138 L50 142 L52 58 Z"/>
+              <path fill="#322a24" d="M52 58 L54 138 L78 138 L82 58 Z"/>
+              <path fill="#222018" d="M84 56 Q92 65 94 90 L90 94 Q88 72 82 62 L76 58 Z"/>
+              <path fill="#3a3630" d="M90 96 L93 96 L96 195 L90 195 Z"/>
+            </svg>
+            <div class="campaign-transition-city"></div>
+          </div>
+          <p class="campaign-transition-caption">The crusader presses on toward the walls of Jerusalem.</p>
+        </div>
+        <div class="campaign-transition-panel" data-transition="1">
+          <div class="campaign-transition-panel-border"></div>
+          <div class="campaign-transition-art campaign-transition-hordes">
+            <div class="campaign-transition-demons-bg"></div>
+            <svg class="campaign-transition-svg crusader-center" viewBox="0 0 100 180" aria-hidden="true">
+              <path fill="#2a2620" d="M35 12 L75 12 L78 20 L80 45 L76 52 L35 52 L32 45 L34 20 Z"/>
+              <path fill="#1a1814" d="M30 54 L26 178 L44 180 L48 58 Z"/>
+              <path fill="#1a1814" d="M52 58 L56 180 L74 178 L70 54 Z"/>
+              <path fill="#222018" d="M38 52 L32 55 L24 88 L30 90 L40 68 L48 52 Z"/>
+              <path fill="#2a2018" d="M18 52 L24 46 L40 44 L56 52 L42 158 L26 155 Z"/>
+              <path fill="#2a2420" d="M34 52 L30 128 L46 132 L48 52 Z"/>
+              <path fill="#322a24" d="M48 52 L50 132 L66 128 L62 52 Z"/>
+              <path fill="#222018" d="M68 50 Q76 58 78 82 L74 86 Q72 68 66 56 L60 52 Z"/>
+              <path fill="#4a4440" d="M74 88 L77 88 L80 172 L74 172 Z"/>
+            </svg>
+            <div class="campaign-transition-demons-fg"></div>
+          </div>
+          <p class="campaign-transition-caption">He fights through hordes of demons to reach the Holy Sepulcher.</p>
+        </div>
+        <div class="campaign-transition-panel" data-transition="2">
+          <div class="campaign-transition-panel-border"></div>
+          <div class="campaign-transition-art campaign-transition-victory">
+            <div class="campaign-transition-light"></div>
+            <svg class="campaign-transition-svg crusader-victory" viewBox="0 0 140 220" aria-hidden="true">
+              <path fill="#1a1410" d="M70 50 Q25 85 22 168 L48 172 Q52 95 70 58 Z"/>
+              <path fill="#1a1814" d="M48 138 L44 218 L58 220 L62 138 Z"/>
+              <path fill="#1a1814" d="M78 138 L74 220 L88 218 L92 138 Z"/>
+              <path fill="#222018" d="M52 68 Q42 82 36 98 L42 102 Q48 88 56 76 L62 72 Z"/>
+              <path fill="#2a2018" d="M28 72 L34 52 L52 48 L68 72 L52 168 L34 164 Z"/>
+              <path fill="#2a2420" d="M42 72 L38 138 L52 142 L56 138 L54 72 Z"/>
+              <path fill="#322a24" d="M56 72 L58 138 L82 138 L86 72 Z"/>
+              <path fill="#222018" d="M86 70 Q94 58 98 48 L102 52 Q96 62 90 72 L78 72 Z"/>
+              <path fill="#4a4440" d="M98 54 L102 54 L105 8 L99 8 Z" transform="rotate(-50 100 32)"/>
+              <path fill="#2a2620" d="M50 22 L90 22 L92 28 L94 52 L90 58 L50 58 L46 52 L48 28 Z"/>
+            </svg>
+            <div class="campaign-transition-cross"></div>
+          </div>
+          <p class="campaign-transition-caption">The crusader has vanquished the demons and reclaimed the Holy Land.</p>
+        </div>
+      </div>
+      <p class="campaign-transition-cta">Click or press any key to continue</p>
+      <div class="campaign-transition-halftone" aria-hidden="true"></div>
+    </div>
 
     <div id="overlay" class="overlay hidden">
       <div class="panel">

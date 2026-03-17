@@ -945,10 +945,12 @@ class Knight extends Entity {
     this.score = 0;
     this.animTime = 0;
     this.deathAnimTime = 0;
+    this.stunTime = 0;
   }
 
   getState() {
     if (this.deathAnimTime > 0) return "death";
+    if (this.stunTime > 0) return "block";
     if (this.blocking) return "block";
     if (this.attackCooldown > 0.05) return "attack";
     if (!this.onGround) return "jump";
@@ -959,6 +961,12 @@ class Knight extends Entity {
   update(dt, demons) {
     if (this.deathAnimTime > 0) {
       this.deathAnimTime -= dt;
+      this.animTime += dt;
+      return;
+    }
+    if (this.stunTime > 0) {
+      this.stunTime -= dt;
+      this.vx *= 0.85;
       this.animTime += dt;
       return;
     }
@@ -1101,11 +1109,113 @@ class Knight extends Entity {
     }
 
     drawKnightHumanoid(ctx, state === "death" ? "idle" : state, frame, this.facing);
+
+    if (this.stunTime > 0 && !dying) {
+      ctx.save();
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = "rgba(100, 140, 255, 0.55)";
+      ctx.beginPath();
+      ctx.ellipse(0, -this.h / 2 - 2, this.w / 2 + 6, this.h / 2 + 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
     ctx.restore();
   }
 }
 
 const DEMON_TYPES = { FOOT: "footsoldier", BRIMSTONE: "brimstone", VANGUARD: "vanguard" };
+
+const CAMPAIGN_STAGES = [
+  {
+    title: "The Road to Jerusalem",
+    waves: [
+      [{ type: DEMON_TYPES.FOOT, delay: 0 }],
+      [{ type: DEMON_TYPES.FOOT, delay: 0 }, { type: DEMON_TYPES.BRIMSTONE, delay: 2 }],
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 1.3 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 3 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 5 }
+      ]
+    ]
+  },
+  {
+    title: "The Gate of Jerusalem",
+    waves: [
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 1 },
+        { type: DEMON_TYPES.FOOT, delay: 2 },
+        { type: DEMON_TYPES.FOOT, delay: 3 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 4.5 }
+      ],
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 1 },
+        { type: DEMON_TYPES.FOOT, delay: 2 },
+        { type: DEMON_TYPES.FOOT, delay: 3 },
+        { type: DEMON_TYPES.FOOT, delay: 4 },
+        { type: DEMON_TYPES.FOOT, delay: 5 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 3.5 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 6 }
+      ],
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 1.2 },
+        { type: DEMON_TYPES.FOOT, delay: 2.4 },
+        { type: DEMON_TYPES.FOOT, delay: 3.6 },
+        { type: DEMON_TYPES.FOOT, delay: 4.8 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 4 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 6 },
+        { type: DEMON_TYPES.VANGUARD, delay: 8 }
+      ]
+    ]
+  },
+  {
+    title: "Inside the Holy Sepulcher",
+    waves: [
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 0.8 },
+        { type: DEMON_TYPES.FOOT, delay: 1.6 },
+        { type: DEMON_TYPES.FOOT, delay: 2.4 },
+        { type: DEMON_TYPES.FOOT, delay: 3.2 },
+        { type: DEMON_TYPES.FOOT, delay: 4 },
+        { type: DEMON_TYPES.FOOT, delay: 4.8 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 4 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 5.5 }
+      ],
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 0.9 },
+        { type: DEMON_TYPES.FOOT, delay: 1.8 },
+        { type: DEMON_TYPES.FOOT, delay: 2.7 },
+        { type: DEMON_TYPES.FOOT, delay: 3.6 },
+        { type: DEMON_TYPES.FOOT, delay: 4.5 },
+        { type: DEMON_TYPES.FOOT, delay: 5.4 },
+        { type: DEMON_TYPES.FOOT, delay: 6.3 },
+        { type: DEMON_TYPES.FOOT, delay: 7.2 },
+        { type: DEMON_TYPES.FOOT, delay: 8.1 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 6 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 8 },
+        { type: DEMON_TYPES.VANGUARD, delay: 10 }
+      ],
+      [
+        { type: DEMON_TYPES.FOOT, delay: 0 },
+        { type: DEMON_TYPES.FOOT, delay: 1.2 },
+        { type: DEMON_TYPES.FOOT, delay: 2.4 },
+        { type: DEMON_TYPES.FOOT, delay: 3.6 },
+        { type: DEMON_TYPES.FOOT, delay: 4.8 },
+        { type: DEMON_TYPES.FOOT, delay: 6 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 5 },
+        { type: DEMON_TYPES.BRIMSTONE, delay: 7 },
+        { type: DEMON_TYPES.VANGUARD, delay: 7 },
+        { type: DEMON_TYPES.VANGUARD, delay: 8.5 },
+        { type: DEMON_TYPES.VANGUARD, delay: 10 }
+      ]
+    ]
+  }
+];
 
 const GROUND_Y = GAME_HEIGHT - 40;
 const ARENA_LEFT = 60;
@@ -1120,6 +1230,8 @@ const BRIMSTONE_BARRAGE_MAX_INTERVAL = 8.0;
 const BRIMSTONE_BARRAGE_SHOTS = 3;
 const BRIMSTONE_BARRAGE_SHOT_GAP = 0.18;
 const VANGUARD_SLAM_SCAR_DURATION = 1.0;
+const SHOCKWAVE_DURATION = 0.35;
+const KNIGHT_STUN_DURATION = 1.0;
 const DIRT_GRAVITY = 980;
 
 class Demon extends Entity {
@@ -1260,7 +1372,16 @@ class Demon extends Entity {
         this.state = "approach";
       }
       if (rectsOverlap(this, knight) && this.attackCooldown <= 0) {
-        knight.takeHit(this.damage, game);
+        if (knight.blocking) {
+          knight.x += this.facing * 16;
+          if (knight.left < 40) knight.x = 40;
+          if (knight.right > GAME_WIDTH - 40) knight.x = GAME_WIDTH - 40 - knight.w;
+          const midX = (this.x + this.w / 2 + knight.x + knight.w / 2) / 2;
+          const midY = GROUND_Y - 24;
+          if (game && typeof game.spawnShockwave === "function") game.spawnShockwave(midX, midY);
+        } else {
+          knight.takeHit(this.damage, game);
+        }
         this.attackCooldown = 0.9;
       }
     }
@@ -1399,7 +1520,13 @@ class Demon extends Entity {
       bottom: GROUND_Y
     };
     const kRect = { left: knight.left, right: knight.right, top: knight.top, bottom: knight.bottom };
-    if (rectsOverlap(slamRect, kRect)) knight.takeHit(this.meleeDamage, game);
+    if (rectsOverlap(slamRect, kRect)) {
+      if (knight.blocking) {
+        knight.stunTime = KNIGHT_STUN_DURATION;
+      } else {
+        knight.takeHit(this.meleeDamage, game);
+      }
+    }
     if (game && typeof game.spawnDirtBurst === "function") game.spawnDirtBurst(impactX, GROUND_Y - 6, this.facing);
     if (game && typeof game.spawnGroundScar === "function") game.spawnGroundScar(impactX, GROUND_Y - 5);
   }
@@ -1434,6 +1561,41 @@ class Demon extends Entity {
       drawBrimstoneDemon(ctx, dying ? "idle" : this.state, 0, animFrame(this.animTime, 4), false);
     } else {
       drawVanguardDemon(ctx, dying ? "approach" : this.state, 0, animFrame(this.animTime, 4), false);
+    }
+
+    const windupWarning = !dying && (
+      (this.type === DEMON_TYPES.FOOT && this.state === "windup" && this.stateTime >= 0) ||
+      (this.type === DEMON_TYPES.BRIMSTONE && this.state === "charge" && this.stateTime >= 0.3) ||
+      (this.type === DEMON_TYPES.VANGUARD && this.state === "windup_claw" && this.stateTime >= 1.5) ||
+      (this.type === DEMON_TYPES.VANGUARD && this.state === "roar" && this.stateTime >= 2.0)
+    );
+    if (windupWarning) {
+      ctx.save();
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = "rgba(255, 90, 90, 0.5)";
+      ctx.beginPath();
+      ctx.ellipse(4 * baseScale, -12 * baseScale, 14 * baseScale, 32 * baseScale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const flashHz = 6;
+      const showExcl = Math.floor(this.stateTime * flashHz) % 2 === 0;
+      if (showExcl) {
+        const exclX = 8 * baseScale;
+        const exclY = -52 * baseScale;
+        const fontSize = Math.round(22 * baseScale);
+        ctx.save();
+        ctx.font = "bold " + fontSize + "px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#1a0000";
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = "round";
+        ctx.strokeText("!", exclX, exclY);
+        ctx.fillStyle = "#ff3333";
+        ctx.fillText("!", exclX, exclY);
+        ctx.restore();
+      }
     }
 
     if (this.flashUntil > 0 && !dying) {
@@ -1519,6 +1681,7 @@ class Game {
     this.projectiles = [];
     this.particles = [];
     this.scars = [];
+    this.shockwaves = [];
     this.spawnTimer = 0;
     this.spawnInterval = 2.4;
     this.level = 1;
@@ -1527,6 +1690,11 @@ class Game {
     this.lastTimestamp = 0;
     this.demonPressure = 0;
     this.crusaderHurtUntil = 0;
+    this.campaignStageIndex = -1;
+    this.campaignWaveIndex = -1;
+    this.campaignWaveQueue = [];
+    this.waveStartTime = 0;
+    this.campaignCinematicActive = false;
     this.loop = this.loop.bind(this);
 
     // Debug counters
@@ -1542,23 +1710,61 @@ class Game {
     this.projectiles = [];
     this.particles = [];
     this.scars = [];
+    this.shockwaves = [];
     this.spawnTimer = 0;
     this.spawnInterval = 2.4;
     this.level = 1;
     this.time = 0;
     this.demonPressure = 0;
     this.gameOver = false;
+    this.crusaderHurtUntil = 0;
     this.lastTimestamp = performance.now();
+    if (this.mode === "campaign" && this.campaignStageIndex >= 0) {
+      this.campaignWaveIndex = 0;
+      this.waveStartTime = 0;
+      const stage = CAMPAIGN_STAGES[this.campaignStageIndex];
+      this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
+    } else {
+      this.campaignStageIndex = -1;
+      this.campaignWaveIndex = -1;
+      this.campaignWaveQueue = [];
+      this.waveStartTime = 0;
+    }
     ui.overlay.classList.add("hidden");
     canvas.focus();
     requestAnimationFrame(this.loop);
   }
 
-  start(mode) {
+  start(mode, campaignStageIndex) {
     this.mode = mode || "campaign";
+    this.gameOver = false;
     this.lastTimestamp = performance.now();
+    if (this.mode === "campaign" && campaignStageIndex >= 0 && campaignStageIndex < CAMPAIGN_STAGES.length) {
+      this.campaignStageIndex = campaignStageIndex;
+      this.campaignWaveIndex = 0;
+      this.waveStartTime = this.time;
+      const stage = CAMPAIGN_STAGES[campaignStageIndex];
+      this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
+    }
+    this.campaignCinematicActive = false;
     canvas.focus();
     requestAnimationFrame(this.loop);
+  }
+
+  showCampaignTransitionAndPause() {
+    this.campaignCinematicActive = true;
+    if (typeof showCampaignTransitionCinematic === "function") {
+      showCampaignTransitionCinematic(this.campaignStageIndex);
+    }
+  }
+
+  advanceCampaignToStage(stageIndex) {
+    this.campaignCinematicActive = false;
+    this.campaignStageIndex = stageIndex;
+    this.campaignWaveIndex = 0;
+    this.waveStartTime = this.time;
+    const stage = CAMPAIGN_STAGES[stageIndex];
+    this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
   }
 
   spawnDemon() {
@@ -1566,6 +1772,10 @@ class Game {
     let type = DEMON_TYPES.FOOT;
     if (roll < 0.35) type = DEMON_TYPES.BRIMSTONE;
     else if (roll < 0.55) type = DEMON_TYPES.VANGUARD;
+    this.spawnDemonByType(type);
+  }
+
+  spawnDemonByType(type) {
     const spawnLeft = Math.random() < 0.5;
     let x;
     if (type === DEMON_TYPES.BRIMSTONE || type === DEMON_TYPES.VANGUARD) {
@@ -1578,6 +1788,7 @@ class Game {
 
   update(dt) {
     if (this.gameOver) return;
+    if (this.campaignCinematicActive) return;
     if (!this.knight || !Number.isFinite(dt) || dt <= 0) return;
 
     this.time += dt;
@@ -1586,15 +1797,34 @@ class Game {
     this.particles = this.particles || [];
     this.scars = this.scars || [];
 
-    const baseInterval = 2.0;
-    const difficultyFactor = 0.08;
-    this.spawnInterval = Math.max(0.8, baseInterval - this.level * difficultyFactor);
-    this.spawnTimer += dt;
-    if (this.spawnTimer >= this.spawnInterval) {
-      this.spawnTimer = 0;
-      this.spawnDemon();
-      if (this.time > 5 && this.time % 15 < 0.04) {
-        this.level++;
+    if (this.mode === "campaign" && this.campaignStageIndex >= 0) {
+      const stage = CAMPAIGN_STAGES[this.campaignStageIndex];
+      const elapsed = this.time - this.waveStartTime;
+      while (this.campaignWaveQueue.length && this.campaignWaveQueue[0].delay <= elapsed) {
+        const entry = this.campaignWaveQueue.shift();
+        this.spawnDemonByType(entry.type);
+      }
+      const aliveCount = this.demons.filter((d) => d.alive).length;
+      if (this.campaignWaveQueue.length === 0 && aliveCount === 0) {
+        this.campaignWaveIndex++;
+        if (this.campaignWaveIndex >= (stage.waves || []).length) {
+          this.showCampaignTransitionAndPause();
+          return;
+        }
+        this.waveStartTime = this.time;
+        this.campaignWaveQueue = (stage.waves[this.campaignWaveIndex] || []).map((e) => ({ type: e.type, delay: e.delay }));
+      }
+    } else {
+      const baseInterval = 2.0;
+      const difficultyFactor = 0.08;
+      this.spawnInterval = Math.max(0.8, baseInterval - this.level * difficultyFactor);
+      this.spawnTimer += dt;
+      if (this.spawnTimer >= this.spawnInterval) {
+        this.spawnTimer = 0;
+        this.spawnDemon();
+        if (this.time > 5 && this.time % 15 < 0.04) {
+          this.level++;
+        }
       }
     }
 
@@ -1649,6 +1879,9 @@ class Game {
       s.t += dt;
     });
     this.scars = this.scars.filter(s => s.t < s.life);
+
+    this.shockwaves.forEach(sw => { sw.t += dt; });
+    this.shockwaves = this.shockwaves.filter(sw => sw.t < sw.life);
 
     this.demons = this.demons.filter(d => d.alive || d.x > -80 && d.x < GAME_WIDTH + 80);
 
@@ -1772,6 +2005,7 @@ class Game {
     ctx.globalCompositeOperation = "source-over";
     this.drawBackground(ctx);
     this.drawGroundScars(ctx);
+    this.drawShockwaves(ctx);
     if (this.knight) this.knight.draw(ctx);
     (this.projectiles || []).forEach(p => this.drawProjectile(ctx, p));
     this.drawDirtParticles(ctx);
@@ -1832,6 +2066,26 @@ class Game {
 
   spawnGroundScar(x, y) {
     this.scars.push({ x, y, t: 0, life: VANGUARD_SLAM_SCAR_DURATION });
+  }
+
+  spawnShockwave(x, y) {
+    this.shockwaves.push({ x, y, t: 0, life: SHOCKWAVE_DURATION });
+  }
+
+  drawShockwaves(ctx) {
+    if (!this.shockwaves.length) return;
+    ctx.save();
+    for (const sw of this.shockwaves) {
+      const p = Math.min(1, sw.t / sw.life);
+      const r = 8 + p * 42;
+      const a = 0.5 * (1 - p);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   spawnFireDeflect(x, y, facing) {
@@ -2116,13 +2370,13 @@ function stopTitleMusic() {
   }
 }
 
-function startFromTitleScreen(mode) {
+function startFromTitleScreen(mode, campaignStageIndex) {
   if (!titleScreenActive) return;
   titleScreenActive = false;
   stopTitleMusic();
   if (titleScreen) titleScreen.classList.add("hidden");
   canvas.focus();
-  game.start(mode);
+  game.start(mode, campaignStageIndex);
 }
 
 const CRUSADER_STORAGE_KEY = "crusader_characters";
@@ -2316,6 +2570,88 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+const campaignStageSelect = document.getElementById("campaign-stage-select");
+const campaignStageBack = document.getElementById("campaign-stage-back");
+
+function showCampaignStageSelect() {
+  if (!campaignStageSelect) return;
+  campaignStageSelect.classList.remove("hidden");
+}
+
+function hideCampaignStageSelect() {
+  if (campaignStageSelect) campaignStageSelect.classList.add("hidden");
+}
+
+if (campaignStageSelect) {
+  campaignStageSelect.addEventListener("click", (e) => {
+    const btn = e.target.closest(".campaign-stage-btn[data-stage]");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const stageIndex = parseInt(btn.getAttribute("data-stage"), 10);
+    if (stageIndex >= 0 && stageIndex < CAMPAIGN_STAGES.length) {
+      hideCampaignStageSelect();
+      startFromTitleScreen("campaign", stageIndex);
+    }
+  });
+}
+if (campaignStageBack) {
+  campaignStageBack.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideCampaignStageSelect();
+  });
+}
+
+const campaignTransitionCinematic = document.getElementById("campaign-transition-cinematic");
+const campaignTransitionPanels = document.querySelectorAll(".campaign-transition-panel");
+
+function showCampaignTransitionCinematic(transitionIndex) {
+  if (!campaignTransitionCinematic || transitionIndex < 0 || transitionIndex > 2) return;
+  campaignTransitionPanels.forEach((p, i) => p.classList.toggle("active", i === transitionIndex));
+  campaignTransitionCinematic.classList.remove("hidden");
+
+  function continueTransition() {
+    campaignTransitionCinematic.classList.add("hidden");
+    campaignTransitionPanels.forEach((p) => p.classList.remove("active"));
+    campaignTransitionCinematic.removeEventListener("click", onTransitionClick);
+    window.removeEventListener("keydown", onTransitionKey);
+
+    if (transitionIndex < 2) {
+      game.advanceCampaignToStage(transitionIndex + 1);
+    } else {
+      returnToTitleAfterCampaign();
+    }
+  }
+
+  function onTransitionClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    continueTransition();
+  }
+  function onTransitionKey(e) {
+    if (VOLUME_MEDIA_KEYS.has(e.key)) return;
+    e.preventDefault();
+    continueTransition();
+  }
+
+  campaignTransitionCinematic.addEventListener("click", onTransitionClick);
+  window.addEventListener("keydown", onTransitionKey, { once: false });
+}
+
+function returnToTitleAfterCampaign() {
+  game.gameOver = true;
+  if (campaignTransitionCinematic) campaignTransitionCinematic.classList.add("hidden");
+  if (ui.overlay) ui.overlay.classList.add("hidden");
+  if (titleScreen) titleScreen.classList.remove("hidden");
+  titleScreenActive = true;
+  if (titleMusic) {
+    titleMusic.currentTime = 0;
+    const p = titleMusic.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }
+}
+
 const campaignCinematic = document.getElementById("campaign-cinematic");
 const campaignPanels = document.querySelectorAll(".campaign-panel");
 const CAMPAIGN_PANEL_COUNT = campaignPanels ? campaignPanels.length : 0;
@@ -2370,7 +2706,7 @@ if (titleMainMenu) {
     e.stopPropagation();
     const menu = btn.getAttribute("data-menu");
     if (menu === "campaign") {
-      showCampaignCinematic();
+      showCampaignStageSelect();
     } else if (menu === "endless") {
       startFromTitleScreen("endless");
     } else if (menu === "options") {
