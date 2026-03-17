@@ -995,7 +995,7 @@ class Knight extends Entity {
 
     this.vy += gravity * dt;
 
-    const walkMultiplier = keys.block ? 0.5 : 1;
+    const walkMultiplier = keys.block ? 0.2 : 1;
     this.x += this.vx * dt * walkMultiplier;
     this.y += this.vy * dt;
 
