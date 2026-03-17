@@ -568,8 +568,89 @@ function drawVanguardDemon(ctx, state, chargeTime, frame, flash) {
   const eyeGlow = flash ? "#fff" : "rgba(255, 40, 30, 0.95)";
   const scale = 1.45;
   const hunched = state === "roar" || state === "windup_claw";
-  // NOTE: do not double-scale: bodyScale already accounts for size
   drawDemonHumanoidBase(ctx, frame, ink, skinLit, skinShadow, scale, 0.5, 1.8, 0, eyeGlow, hunched, flash);
+}
+
+function drawFlyingDemon(ctx, frame, flash) {
+  const ink = flash ? "#fff" : "#0a0a12";
+  const skinLit = flash ? "#fff" : "#4a6a9a";
+  const skinShadow = flash ? "#fff" : "#2a3a5a";
+  const wingLit = flash ? "#fff" : "#5a7ab0";
+  const wingShadow = flash ? "#fff" : "#2a4a7a";
+  const scale = 0.85;
+  const bodyH = 28 * scale;
+  const headY = -bodyH - 8 * scale;
+  const wingSpan = 28 * scale;
+  const flap = Math.sin(frame * 0.8) * 0.15;
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  ctx.fillStyle = skinShadow;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.ellipse(0, -bodyH / 2 - 4, 8 * scale, bodyH / 2 + 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = skinLit;
+  ctx.beginPath();
+  ctx.ellipse(2 * scale, -bodyH / 2 - 2, 6 * scale, bodyH / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = skinShadow;
+  ctx.beginPath();
+  ctx.arc(6 * scale, headY, 8 * scale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = skinLit;
+  ctx.beginPath();
+  ctx.arc(7 * scale, headY + 1, 6 * scale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  if (!flash) {
+    ctx.fillStyle = "rgba(255, 220, 200, 0.9)";
+    ctx.beginPath();
+    ctx.ellipse(8 * scale, headY - 1, 2.5 * scale, 2 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const wingY = -bodyH / 2 - 2 + flap * 6;
+  ctx.fillStyle = wingShadow;
+  ctx.beginPath();
+  ctx.moveTo(4, wingY);
+  ctx.quadraticCurveTo(-wingSpan * (1.1 + flap), wingY - 18, -wingSpan * 0.6, wingY + 6);
+  ctx.quadraticCurveTo(-wingSpan * 0.2, wingY + 2, 4, wingY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = wingLit;
+  ctx.beginPath();
+  ctx.moveTo(2, wingY - 2);
+  ctx.quadraticCurveTo(-wingSpan * (0.9 + flap), wingY - 14, -wingSpan * 0.5, wingY + 4);
+  ctx.quadraticCurveTo(-wingSpan * 0.15, wingY, 2, wingY - 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = wingShadow;
+  ctx.beginPath();
+  ctx.moveTo(-4, wingY);
+  ctx.quadraticCurveTo(wingSpan * (1.1 + flap), wingY - 18, wingSpan * 0.6, wingY + 6);
+  ctx.quadraticCurveTo(wingSpan * 0.2, wingY + 2, -4, wingY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = wingLit;
+  ctx.beginPath();
+  ctx.moveTo(-2, wingY - 2);
+  ctx.quadraticCurveTo(wingSpan * (0.9 + flap), wingY - 14, wingSpan * 0.5, wingY + 4);
+  ctx.quadraticCurveTo(wingSpan * 0.15, wingY, -2, wingY - 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 }
 
 // Side-view demon: faces right (positive x = forward). One leg, one arm, profile head with horns, one wing, tail.
@@ -1158,14 +1239,14 @@ class Knight extends Entity {
   }
 }
 
-const DEMON_TYPES = { FOOT: "footsoldier", BRIMSTONE: "brimstone", VANGUARD: "vanguard" };
+const DEMON_TYPES = { FOOT: "footsoldier", BRIMSTONE: "brimstone", VANGUARD: "vanguard", FLYING: "flying" };
 
 const CAMPAIGN_STAGES = [
   {
     title: "The Road to Jerusalem",
     waves: [
       [{ type: DEMON_TYPES.FOOT, delay: 0 }],
-      [{ type: DEMON_TYPES.FOOT, delay: 0 }, { type: DEMON_TYPES.BRIMSTONE, delay: 2 }],
+      [{ type: DEMON_TYPES.FOOT, delay: 0 }, { type: DEMON_TYPES.BRIMSTONE, delay: 2 }, { type: DEMON_TYPES.FLYING, delay: 3 }],
       [
         { type: DEMON_TYPES.FOOT, delay: 0 },
         { type: DEMON_TYPES.FOOT, delay: 1.3 },
@@ -1192,7 +1273,8 @@ const CAMPAIGN_STAGES = [
         { type: DEMON_TYPES.FOOT, delay: 4 },
         { type: DEMON_TYPES.FOOT, delay: 5 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 3.5 },
-        { type: DEMON_TYPES.BRIMSTONE, delay: 6 }
+        { type: DEMON_TYPES.BRIMSTONE, delay: 6 },
+        { type: DEMON_TYPES.FLYING, delay: 5 }
       ],
       [
         { type: DEMON_TYPES.FOOT, delay: 0 },
@@ -1202,7 +1284,9 @@ const CAMPAIGN_STAGES = [
         { type: DEMON_TYPES.FOOT, delay: 4.8 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 4 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 6 },
-        { type: DEMON_TYPES.VANGUARD, delay: 8 }
+        { type: DEMON_TYPES.VANGUARD, delay: 8 },
+        { type: DEMON_TYPES.FLYING, delay: 4 },
+        { type: DEMON_TYPES.FLYING, delay: 7 }
       ]
     ]
   },
@@ -1218,7 +1302,8 @@ const CAMPAIGN_STAGES = [
         { type: DEMON_TYPES.FOOT, delay: 4 },
         { type: DEMON_TYPES.FOOT, delay: 4.8 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 4 },
-        { type: DEMON_TYPES.BRIMSTONE, delay: 5.5 }
+        { type: DEMON_TYPES.BRIMSTONE, delay: 5.5 },
+        { type: DEMON_TYPES.FLYING, delay: 2 }
       ],
       [
         { type: DEMON_TYPES.FOOT, delay: 0 },
@@ -1233,7 +1318,10 @@ const CAMPAIGN_STAGES = [
         { type: DEMON_TYPES.FOOT, delay: 8.1 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 6 },
         { type: DEMON_TYPES.BRIMSTONE, delay: 8 },
-        { type: DEMON_TYPES.VANGUARD, delay: 10 }
+        { type: DEMON_TYPES.VANGUARD, delay: 10 },
+        { type: DEMON_TYPES.FLYING, delay: 3 },
+        { type: DEMON_TYPES.FLYING, delay: 5 },
+        { type: DEMON_TYPES.FLYING, delay: 7 }
       ],
       [
         { type: DEMON_TYPES.FOOT, delay: 0 },
@@ -1246,11 +1334,39 @@ const CAMPAIGN_STAGES = [
         { type: DEMON_TYPES.BRIMSTONE, delay: 7 },
         { type: DEMON_TYPES.VANGUARD, delay: 7 },
         { type: DEMON_TYPES.VANGUARD, delay: 8.5 },
-        { type: DEMON_TYPES.VANGUARD, delay: 10 }
+        { type: DEMON_TYPES.VANGUARD, delay: 10 },
+        { type: DEMON_TYPES.FLYING, delay: 2 },
+        { type: DEMON_TYPES.FLYING, delay: 4 },
+        { type: DEMON_TYPES.FLYING, delay: 6 },
+        { type: DEMON_TYPES.FLYING, delay: 8 }
       ]
     ]
   }
 ];
+
+function getEndlessWaveEntries(waveIndex) {
+  if (waveIndex <= 2) {
+    const stage = CAMPAIGN_STAGES[1];
+    const wave = (stage.waves || [])[waveIndex] || [];
+    return wave.map((e) => ({ type: e.type, delay: e.delay }));
+  }
+  if (waveIndex <= 5) {
+    const stage = CAMPAIGN_STAGES[2];
+    const wave = (stage.waves || [])[waveIndex - 3] || [];
+    return wave.map((e) => ({ type: e.type, delay: e.delay }));
+  }
+  const base = (CAMPAIGN_STAGES[2].waves || [])[2] || [];
+  const scale = Math.pow(1.25, waveIndex - 6);
+  const targetCount = Math.max(base.length, Math.round(base.length * scale));
+  const out = [];
+  const repeatGap = 12;
+  for (let i = 0; i < targetCount; i++) {
+    const e = base[i % base.length];
+    const repeat = Math.floor(i / base.length);
+    out.push({ type: e.type, delay: e.delay + repeat * repeatGap });
+  }
+  return out;
+}
 
 const GROUND_Y = GAME_HEIGHT - 40;
 const ARENA_LEFT = 60;
@@ -1300,6 +1416,22 @@ class Demon extends Entity {
     this.barrageShotsLeft = 0;
     this.barrageShotTimer = 0;
     this.retreatTime = 0;
+    this.flyHeight = 0;
+    this.flyVx = 0;
+    this.flyVy = 0;
+    this.flyTargetX = 0;
+    this.flyTargetY = 0;
+    this.flyPauseUntil = 0;
+    this.flyMoveUntil = 4 + Math.random() * 2;
+    this.nextLandAt = 9 + Math.random() * 4;
+    this.landUntil = 0;
+    this.flyingFireCooldown = 0;
+    if (type === DEMON_TYPES.FLYING) {
+      this.y = GROUND_Y - stats.h - 70;
+      this.flyTargetX = x + w / 2;
+      this.flyVx = (Math.random() - 0.5) * 50;
+      this.flyVy = (Math.random() - 0.5) * 20;
+    }
   }
 
   takeHit(damage, knightCenterX) {
@@ -1316,6 +1448,9 @@ class Demon extends Entity {
       const myCenterX = this.x + this.w / 2;
       this.vx = Math.sign(myCenterX - knightCenterX) * STUN_KNOCKBACK_SPEED;
     }
+    if (this.type === DEMON_TYPES.FLYING && this.state !== "landed_idle") {
+      this.flyVx += Math.sign(this.x + this.w / 2 - knightCenterX) * 80;
+    }
   }
 
   update(dt, knight, game) {
@@ -1323,7 +1458,7 @@ class Demon extends Entity {
 
     this.animTime += dt;
     const groundY = GROUND_Y;
-    this.y = groundY - this.h;
+    if (this.type !== DEMON_TYPES.FLYING) this.y = groundY - this.h;
 
     if (this.state === "dying") {
       this.deathAnimTime += dt;
@@ -1360,12 +1495,103 @@ class Demon extends Entity {
         this.updateBrimstone(dt, knight, game);
       } else if (this.type === DEMON_TYPES.VANGUARD) {
         this.updateVanguard(dt, knight, game);
+      } else if (this.type === DEMON_TYPES.FLYING) {
+        this.updateFlying(dt, knight, game);
       }
     }
 
-    this.x += this.vx * dt;
-    if (this.x < ARENA_LEFT) this.x = ARENA_LEFT;
-    if (this.x > ARENA_RIGHT - this.w) this.x = ARENA_RIGHT - this.w;
+    if (this.type === DEMON_TYPES.FLYING) {
+      this.x += this.flyVx * dt;
+      this.y += this.flyVy * dt;
+      if (this.x < ARENA_LEFT) { this.x = ARENA_LEFT; this.flyVx = Math.abs(this.flyVx) * 0.5; }
+      if (this.x > ARENA_RIGHT - this.w) { this.x = ARENA_RIGHT - this.w; this.flyVx = -Math.abs(this.flyVx) * 0.5; }
+      const flyCeiling = groundY - this.h - 120;
+      if (this.y < flyCeiling) { this.y = flyCeiling; this.flyVy = Math.abs(this.flyVy) * 0.5; }
+      if (this.y > groundY - this.h) this.y = groundY - this.h;
+    } else {
+      this.x += this.vx * dt;
+      if (this.x < ARENA_LEFT) this.x = ARENA_LEFT;
+      if (this.x > ARENA_RIGHT - this.w) this.x = ARENA_RIGHT - this.w;
+    }
+  }
+
+  updateFlying(dt, knight, game) {
+    const groundY = GROUND_Y;
+    const flyAltitude = 70;
+    const flySpeed = 65;
+    const pauseDuration = 4 + Math.random() * 2;
+    const moveDuration = 4 + Math.random() * 2;
+    const landIdleDuration = 4 + Math.random() * 2;
+    const landInterval = 9 + Math.random() * 4;
+
+    if (this.state === "landed_idle") {
+      this.flyVx = 0;
+      this.flyVy = 0;
+      this.y = groundY - this.h;
+      this.landUntil -= dt;
+      if (this.landUntil <= 0) {
+        this.state = "flying";
+        this.flyMoveUntil = moveDuration;
+        this.nextLandAt = landInterval;
+        this.flyVy = -55;
+        this.flyTargetX = this.x + this.w / 2;
+      }
+      return;
+    }
+
+    if (this.state === "flying_pause") {
+      this.flyVx *= 0.9;
+      this.flyVy *= 0.9;
+      this.flyPauseUntil -= dt;
+      if (this.flyPauseUntil <= 0) {
+        this.state = "flying";
+        this.flyMoveUntil = moveDuration;
+      }
+      this.flyingFireCooldown -= dt;
+      if (this.flyingFireCooldown <= 0 && this.y < groundY - this.h - 20) {
+        this.fireFlame(knight, game, 1);
+        this.flyingFireCooldown = 2;
+      }
+      return;
+    }
+
+    this.nextLandAt -= dt;
+    if (this.nextLandAt <= 0 && this.landUntil <= 0) {
+      this.state = "landed_idle";
+      this.landUntil = landIdleDuration;
+      this.flyVx = 0;
+      this.flyVy = 0;
+      this.y = groundY - this.h;
+      this.nextLandAt = landInterval;
+      return;
+    }
+
+    this.flyMoveUntil -= dt;
+    if (this.flyMoveUntil <= 0) {
+      this.state = "flying_pause";
+      this.flyPauseUntil = pauseDuration;
+      return;
+    }
+
+    if (this.state === "flying") {
+      const targetY = groundY - this.h - flyAltitude - Math.sin(this.animTime * 1.5) * 15;
+      const myCenterX = this.x + this.w / 2;
+      this.flyTargetX += (Math.random() - 0.5) * 40 * dt;
+      this.flyTargetX = Math.max(ARENA_LEFT + 80, Math.min(ARENA_RIGHT - 80, this.flyTargetX));
+      this.flyTargetY = targetY;
+      const dx = this.flyTargetX - myCenterX;
+      const dy = this.flyTargetY - (this.y + this.h / 2);
+      const len = Math.hypot(dx, dy) || 1;
+      this.flyVx = (dx / len) * flySpeed * (0.6 + Math.random() * 0.5);
+      this.flyVy = (dy / len) * flySpeed * (0.6 + Math.random() * 0.5);
+      this.facing = dx >= 0 ? 1 : -1;
+    }
+
+    this.flyingFireCooldown -= dt;
+    if (this.flyingFireCooldown <= 0 && this.y < groundY - this.h - 20) {
+      this.fireFlame(knight, game, 1);
+      this.flyingFireCooldown = 2;
+    }
   }
 
   updateFootSoldier(dt, knight) {
@@ -1572,6 +1798,8 @@ class Demon extends Entity {
     const centerX = this.x + this.w / 2;
 
     ctx.save();
+    const shadowAlpha = this.type === DEMON_TYPES.FLYING && this.y < GROUND_Y - this.h - 20 ? 0.4 : 0.75;
+    ctx.globalAlpha = shadowAlpha;
     drawInkShadow(ctx, centerX, shadowY, this.w * 0.5, 12, 0.75);
     ctx.restore();
 
@@ -1579,8 +1807,13 @@ class Demon extends Entity {
     const hunched = this.type === DEMON_TYPES.FOOT ? this.state === "windup" : this.type === DEMON_TYPES.BRIMSTONE ? this.state === "charge" : (this.state === "roar" || this.state === "windup_claw");
     const footYLocal = getDemonFootY(animFrame(this.animTime, 4), baseScale, hunched);
     ctx.save();
-    ctx.translate(this.x + this.w / 2, GROUND_Y - footYLocal);
-    ctx.scale(this.facing, 1);
+    if (this.type === DEMON_TYPES.FLYING) {
+      ctx.translate(this.x + this.w / 2, this.y + this.h);
+      ctx.scale(this.facing, 1);
+    } else {
+      ctx.translate(this.x + this.w / 2, GROUND_Y - footYLocal);
+      ctx.scale(this.facing, 1);
+    }
 
     const dying = this.state === "dying";
     const deathProgress = dying ? Math.min(1, this.deathAnimTime / DEMON_DEATH_DURATION) : 0;
@@ -1594,11 +1827,13 @@ class Demon extends Entity {
       drawFootSoldierDemon(ctx, dying ? "stand" : this.state, animFrame(this.animTime, 4), this.stunTime > 0, false);
     } else if (this.type === DEMON_TYPES.BRIMSTONE) {
       drawBrimstoneDemon(ctx, dying ? "idle" : this.state, 0, animFrame(this.animTime, 4), false);
+    } else if (this.type === DEMON_TYPES.FLYING) {
+      drawFlyingDemon(ctx, animFrame(this.animTime, 4), false);
     } else {
       drawVanguardDemon(ctx, dying ? "approach" : this.state, 0, animFrame(this.animTime, 4), false);
     }
 
-    const windupWarning = !dying && (
+    const windupWarning = !dying && this.type !== DEMON_TYPES.FLYING && (
       (this.type === DEMON_TYPES.FOOT && this.state === "windup" && this.stateTime >= 0) ||
       (this.type === DEMON_TYPES.BRIMSTONE && this.state === "charge" && this.stateTime >= 0.3) ||
       (this.type === DEMON_TYPES.VANGUARD && this.state === "windup_claw" && this.stateTime >= 1.5) ||
@@ -1640,6 +1875,8 @@ class Demon extends Entity {
         drawFootSoldierDemon(ctx, this.state, animFrame(this.animTime, 4), this.stunTime > 0, true);
       } else if (this.type === DEMON_TYPES.BRIMSTONE) {
         drawBrimstoneDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), true);
+      } else if (this.type === DEMON_TYPES.FLYING) {
+        drawFlyingDemon(ctx, animFrame(this.animTime, 4), true);
       } else {
         drawVanguardDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), true);
       }
@@ -1681,6 +1918,16 @@ function getDemonStats(type) {
       ramDamage: 25,
       meleeDamage: 18,
       initialState: "roar"
+    };
+  }
+  if (type === DEMON_TYPES.FLYING) {
+    return {
+      w: 36,
+      h: 48,
+      maxHealth: 2,
+      speed: 55,
+      damage: 0,
+      initialState: "flying"
     };
   }
   return { w: 42, h: 54, maxHealth: 10, speed: 90, damage: 12, initialState: "approach" };
@@ -1729,6 +1976,7 @@ class Game {
     this.campaignWaveIndex = -1;
     this.campaignWaveQueue = [];
     this.waveStartTime = 0;
+    this.endlessWaveIndex = 0;
     this.campaignCinematicActive = false;
     this.paused = false;
     this.pauseMusicElapsed = 0;
@@ -1772,6 +2020,11 @@ class Game {
       this.campaignWaveIndex = -1;
       this.campaignWaveQueue = [];
       this.waveStartTime = 0;
+      if (this.mode === "endless") {
+        this.endlessWaveIndex = 0;
+        this.waveStartTime = 0;
+        this.campaignWaveQueue = getEndlessWaveEntries(0);
+      }
     }
     ui.overlay.classList.add("hidden");
     if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
@@ -1875,6 +2128,8 @@ class Game {
     let x;
     if (type === DEMON_TYPES.BRIMSTONE || type === DEMON_TYPES.VANGUARD) {
       x = spawnLeft ? ARENA_LEFT : ARENA_RIGHT - getDemonStats(type).w;
+    } else if (type === DEMON_TYPES.FLYING) {
+      x = ARENA_LEFT + 60 + Math.random() * (ARENA_RIGHT - ARENA_LEFT - 60 - getDemonStats(type).w);
     } else {
       x = spawnLeft ? ARENA_LEFT + 30 : ARENA_RIGHT - getDemonStats(type).w - 30;
     }
@@ -1914,19 +2169,17 @@ class Game {
         this.waveStartTime = this.time;
         this.campaignWaveQueue = (stage.waves[this.campaignWaveIndex] || []).map((e) => ({ type: e.type, delay: e.delay }));
       }
-    } else {
-      // Endless: level rises with time forever (no cap). Spawns get faster and harder.
-      this.level = 1 + Math.floor(this.time / 25);
-      const baseInterval = 2.8;
-      const minInterval = 0.5;
-      this.spawnInterval = Math.max(minInterval, baseInterval - this.level * 0.04);
-      this.spawnTimer += dt;
-      if (this.spawnTimer >= this.spawnInterval) {
-        this.spawnTimer = 0;
-        this.spawnDemon();
-        // At high levels, sometimes spawn an extra demon so count keeps rising.
-        if (this.level >= 15 && Math.random() < 0.2) this.spawnDemon();
-        if (this.level >= 35 && Math.random() < 0.15) this.spawnDemon();
+    } else if (this.mode === "endless") {
+      const elapsed = this.time - this.waveStartTime;
+      while (this.campaignWaveQueue.length && this.campaignWaveQueue[0].delay <= elapsed) {
+        const entry = this.campaignWaveQueue.shift();
+        this.spawnDemonByType(entry.type);
+      }
+      const aliveCount = this.demons.filter((d) => d.alive).length;
+      if (this.campaignWaveQueue.length === 0 && aliveCount === 0) {
+        this.endlessWaveIndex++;
+        this.waveStartTime = this.time;
+        this.campaignWaveQueue = getEndlessWaveEntries(this.endlessWaveIndex);
       }
     }
 
