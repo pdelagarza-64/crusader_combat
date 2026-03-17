@@ -396,28 +396,33 @@ function drawKnightHumanoid(ctx, state, frame, facing) {
 
   if (state === "block") {
     ctx.save();
-    ctx.translate(handX + 6, handY);
-    ctx.rotate(swordAngle);
-    const sg = ctx.createLinearGradient(-6, 0, 6, 0);
+    // Big body-covering shield on the facing side.
+    ctx.translate(14, pelvisY - 20);
+    ctx.rotate(-0.08);
+    const sg = ctx.createLinearGradient(-14, 0, 14, 0);
     sg.addColorStop(0, shieldShadow);
     sg.addColorStop(1, shieldLit);
     ctx.fillStyle = sg;
     ctx.strokeStyle = ink;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(-5, -14);
-    ctx.lineTo(5, -4);
-    ctx.lineTo(5, 12);
-    ctx.lineTo(-5, 14);
+    // Kite shield silhouette (covers most of torso/legs)
+    ctx.moveTo(-12, -30);
+    ctx.quadraticCurveTo(14, -22, 12, -4);
+    ctx.quadraticCurveTo(10, 18, 0, 34);
+    ctx.quadraticCurveTo(-10, 18, -12, -4);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // boss + rim highlight
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    // rim highlight
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.arc(0.5, -2, 2.5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(-10, -24);
+    ctx.quadraticCurveTo(10, -20, 10, -4);
+    ctx.quadraticCurveTo(8, 16, 0, 30);
+    ctx.stroke();
     ctx.globalAlpha = 1;
     ctx.restore();
   } else {
@@ -426,24 +431,29 @@ function drawKnightHumanoid(ctx, state, frame, facing) {
     const swordTipY = handY + swordLen * Math.cos(swordAngleTip);
 
     // White crescent swing trail (attack only), drawn in front of the blade.
+    // Use a thin filled ring-slice so it reads as a long sweeping crescent (not a thick bent stroke).
     if (state === "attack") {
-      const arcRadius = swordLen * 0.92;
-      const arcStart = swordAngle - 0.52;
-      const arcEnd = swordAngle + 0.08;
+      const arcRadiusOuter = swordLen * 1.22;
+      const arcThickness = 3.0;
+      const arcRadiusInner = Math.max(2, arcRadiusOuter - arcThickness);
+      const arcStart = swordAngle - 0.95;
+      const arcEnd = swordAngle + 0.22;
       ctx.save();
       ctx.translate(handX, handY);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.88)";
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
       ctx.beginPath();
-      ctx.arc(0, 0, arcRadius, arcStart, arcEnd);
-      ctx.stroke();
-      ctx.globalAlpha = 0.5;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-      ctx.lineWidth = 10;
+      ctx.arc(0, 0, arcRadiusOuter, arcStart, arcEnd);
+      ctx.arc(0, 0, arcRadiusInner, arcEnd, arcStart, true);
+      ctx.closePath();
+      ctx.fill();
+      // soft outer glow for readability
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
       ctx.beginPath();
-      ctx.arc(0, 0, arcRadius, arcStart, arcEnd);
-      ctx.stroke();
+      ctx.arc(0, 0, arcRadiusOuter + 2.2, arcStart, arcEnd);
+      ctx.arc(0, 0, arcRadiusInner - 1.2, arcEnd, arcStart, true);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
 
@@ -1032,7 +1042,7 @@ class Knight extends Entity {
     });
   }
 
-  takeHit(damage) {
+  takeHit(damage, game) {
     if (this.invulnTime > 0) return;
     if (this.deathAnimTime > 0) return;
     let finalDamage = damage;
@@ -1043,6 +1053,7 @@ class Knight extends Entity {
     if (this.health < 0) this.health = 0;
     if (this.health <= 0) this.deathAnimTime = KNIGHT_DEATH_DURATION;
     else this.invulnTime = 0.8;
+    if (game && typeof game.crusaderHurtUntil !== "undefined") game.crusaderHurtUntil = game.time + 1.5;
   }
 
   draw(ctx) {
@@ -1141,6 +1152,7 @@ class Demon extends Entity {
     this.barrageCooldown = BRIMSTONE_BARRAGE_MIN_INTERVAL + Math.random() * (BRIMSTONE_BARRAGE_MAX_INTERVAL - BRIMSTONE_BARRAGE_MIN_INTERVAL);
     this.barrageShotsLeft = 0;
     this.barrageShotTimer = 0;
+    this.retreatTime = 0;
   }
 
   takeHit(damage, knightCenterX) {
@@ -1182,14 +1194,26 @@ class Demon extends Entity {
       return;
     }
 
-    this.facing = knight.x < this.x + this.w / 2 ? -1 : 1;
-
-    if (this.type === DEMON_TYPES.FOOT) {
-      this.updateFootSoldier(dt, knight);
-    } else if (this.type === DEMON_TYPES.BRIMSTONE) {
-      this.updateBrimstone(dt, knight, game);
-    } else if (this.type === DEMON_TYPES.VANGUARD) {
-      this.updateVanguard(dt, knight, game);
+    const knightCenterX = knight.x + knight.w / 2;
+    const myCenterX = this.x + this.w / 2;
+    const distToKnight = Math.abs(myCenterX - knightCenterX);
+    if (game && game.crusaderHurtUntil > game.time && this.retreatTime <= 0 && distToKnight < 180) {
+      this.retreatTime = 1.5;
+    }
+    const RETREAT_SPEED = 38;
+    if (this.retreatTime > 0) {
+      this.retreatTime -= dt;
+      this.facing = knightCenterX > myCenterX ? 1 : -1;
+      this.vx = -this.facing * RETREAT_SPEED;
+    } else {
+      this.facing = knight.x < myCenterX ? -1 : 1;
+      if (this.type === DEMON_TYPES.FOOT) {
+        this.updateFootSoldier(dt, knight);
+      } else if (this.type === DEMON_TYPES.BRIMSTONE) {
+        this.updateBrimstone(dt, knight, game);
+      } else if (this.type === DEMON_TYPES.VANGUARD) {
+        this.updateVanguard(dt, knight, game);
+      }
     }
 
     this.x += this.vx * dt;
@@ -1236,7 +1260,7 @@ class Demon extends Entity {
         this.state = "approach";
       }
       if (rectsOverlap(this, knight) && this.attackCooldown <= 0) {
-        knight.takeHit(this.damage);
+        knight.takeHit(this.damage, game);
         this.attackCooldown = 0.9;
       }
     }
@@ -1337,7 +1361,7 @@ class Demon extends Entity {
         this.state = "approach";
       }
       if (rectsOverlap(this, knight)) {
-        knight.takeHit(this.ramDamage);
+        knight.takeHit(this.ramDamage, game);
         this.vx = 0;
         this.state = "approach";
       }
@@ -1375,7 +1399,7 @@ class Demon extends Entity {
       bottom: GROUND_Y
     };
     const kRect = { left: knight.left, right: knight.right, top: knight.top, bottom: knight.bottom };
-    if (rectsOverlap(slamRect, kRect)) knight.takeHit(this.meleeDamage);
+    if (rectsOverlap(slamRect, kRect)) knight.takeHit(this.meleeDamage, game);
     if (game && typeof game.spawnDirtBurst === "function") game.spawnDirtBurst(impactX, GROUND_Y - 6, this.facing);
     if (game && typeof game.spawnGroundScar === "function") game.spawnGroundScar(impactX, GROUND_Y - 5);
   }
@@ -1474,6 +1498,20 @@ function rectsOverlap(a, b) {
   );
 }
 
+function getKnightShieldRect(knight) {
+  // Big body-covering shield on the facing side.
+  const shieldW = 18;
+  const shieldH = knight.h * 0.95;
+  const top = knight.y + knight.h * 0.02;
+  const bottom = top + shieldH;
+  if (knight.facing >= 0) {
+    const left = knight.x + knight.w * 0.55;
+    return { left, right: left + shieldW, top, bottom };
+  }
+  const right = knight.x + knight.w * 0.45;
+  return { left: right - shieldW, right, top, bottom };
+}
+
 class Game {
   constructor() {
     this.knight = new Knight();
@@ -1488,6 +1526,7 @@ class Game {
     this.gameOver = false;
     this.lastTimestamp = 0;
     this.demonPressure = 0;
+    this.crusaderHurtUntil = 0;
     this.loop = this.loop.bind(this);
 
     // Debug counters
@@ -1572,19 +1611,33 @@ class Game {
       if (p.t != null) p.t += dt;
       if (p.life <= 0) return;
       const pr = { left: p.x - p.w / 2, right: p.x + p.w / 2, top: p.y - p.h / 2, bottom: p.y + p.h / 2 };
+      // Shield blocks fireballs completely and creates deflection particles.
+      if (p.kind === "fire" && this.knight.blocking) {
+        const sr = getKnightShieldRect(this.knight);
+        if (rectsOverlap(pr, sr)) {
+          this.spawnFireDeflect(p.x, p.y, this.knight.facing);
+          p.life = 0;
+          return;
+        }
+      }
       if (rectsOverlap(pr, this.knight)) {
-        this.knight.takeHit(p.damage);
+        this.knight.takeHit(p.damage, this);
         p.life = 0;
       }
     });
     this.projectiles = this.projectiles.filter(p => p.life > 0 && p.x > -50 && p.x < GAME_WIDTH + 50);
 
     this.particles.forEach(pt => {
-      pt.vy += DIRT_GRAVITY * dt;
+      if (pt.kind === "fire") {
+        pt.vy += 260 * dt;
+        pt.vx *= 0.985;
+      } else {
+        pt.vy += DIRT_GRAVITY * dt;
+      }
       pt.x += pt.vx * dt;
       pt.y += pt.vy * dt;
       pt.life -= dt;
-      if (pt.y > GROUND_Y - 2) {
+      if (pt.kind !== "fire" && pt.y > GROUND_Y - 2) {
         pt.y = GROUND_Y - 2;
         pt.vx *= 0.65;
         pt.vy *= -0.25;
@@ -1781,17 +1834,55 @@ class Game {
     this.scars.push({ x, y, t: 0, life: VANGUARD_SLAM_SCAR_DURATION });
   }
 
+  spawnFireDeflect(x, y, facing) {
+    const count = 14 + Math.floor(Math.random() * 10);
+    for (let i = 0; i < count; i++) {
+      const a = (Math.random() - 0.5) * 1.1;
+      const sp = 140 + Math.random() * 240;
+      const vx = -facing * (220 + Math.random() * 220) + Math.cos(a) * sp * 0.35;
+      const vy = (-120 + Math.random() * 180) + Math.sin(a) * sp * 0.25;
+      this.particles.push({
+        kind: "fire",
+        x: x + (Math.random() - 0.5) * 6,
+        y: y + (Math.random() - 0.5) * 6,
+        vx,
+        vy,
+        life: 0.35 + Math.random() * 0.35,
+        size: 1.4 + Math.random() * 2.6,
+        heat: 0.6 + Math.random() * 0.4
+      });
+    }
+  }
+
   drawDirtParticles(ctx) {
     if (!this.particles.length) return;
     ctx.save();
     for (const pt of this.particles) {
-      const a = Math.max(0, Math.min(1, pt.life / 1.0));
-      ctx.globalAlpha = 0.85 * a;
-      const c = Math.floor(40 + 120 * pt.shade);
-      ctx.fillStyle = `rgb(${c}, ${c - 6}, ${c - 14})`;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-      ctx.fill();
+      if (pt.kind === "fire") {
+        const a = Math.max(0, Math.min(1, pt.life / 0.7));
+        const heat = pt.heat || 1;
+        ctx.globalAlpha = 0.9 * a;
+        const r = 255;
+        const g = Math.floor(160 + 70 * heat);
+        const b = Math.floor(40 + 30 * heat);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.35 * a;
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.beginPath();
+        ctx.arc(pt.x + 0.6, pt.y - 0.4, pt.size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const a = Math.max(0, Math.min(1, pt.life / 1.0));
+        ctx.globalAlpha = 0.85 * a;
+        const c = Math.floor(40 + 120 * pt.shade);
+        ctx.fillStyle = `rgb(${c}, ${c - 6}, ${c - 14})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
   }
