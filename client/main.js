@@ -537,6 +537,185 @@ function drawDemonHumanoid(ctx, frame) {
   ctx.stroke();
 }
 
+function drawFootSoldierDemon(ctx, state, frame, stunned, flash) {
+  const ink = flash ? "#fff" : "#0a0a0c";
+  const skinLit = flash ? "#fff" : "#c83830";
+  const skinShadow = flash ? "#fff" : "#781818";
+  const wingScale = 0.6;
+  const hunched = state === "windup";
+  drawDemonHumanoidBase(ctx, frame, ink, skinLit, skinShadow, 1, wingScale, 1, 0, undefined, hunched, flash);
+}
+
+function drawBrimstoneDemon(ctx, state, chargeTime, frame, flash) {
+  const ink = flash ? "#fff" : "#0a0a0c";
+  const skinLit = flash ? "#fff" : "#4a4038";
+  const skinShadow = flash ? "#fff" : "#2a2218";
+  const eyeGlow = flash ? "#fff" : "rgba(255, 60, 40, 0.95)";
+  const bellyGlow = flash ? 0 : (chargeTime > 0 ? Math.min(1, chargeTime / 0.6) : 0);
+  const hunched = state === "charge";
+  drawDemonHumanoidBase(ctx, frame, ink, skinLit, skinShadow, 1, 1.4, 1, bellyGlow, eyeGlow, hunched, flash);
+}
+
+function drawVanguardDemon(ctx, state, chargeTime, frame, flash) {
+  const ink = flash ? "#fff" : "#0a0a0c";
+  const skinLit = flash ? "#fff" : "#8a5040";
+  const skinShadow = flash ? "#fff" : "#4a2820";
+  const scale = 1.45;
+  const hunched = state === "roar" || state === "windup_claw";
+  ctx.save();
+  ctx.scale(scale, scale);
+  drawDemonHumanoidBase(ctx, frame, ink, skinLit, skinShadow, scale, 0.5, 1.8, 0, undefined, hunched, flash);
+  ctx.restore();
+}
+
+function drawDemonHumanoidBase(ctx, frame, ink, skinLit, skinShadow, bodyScale, wingScale, hornScale, bellyGlow, eyeGlow, hunched, flash) {
+  const eyeGlowColor = eyeGlow || "rgba(40,38,36,0.9)";
+  if (hunched) {
+    ctx.save();
+    ctx.translate(0, 10);
+    ctx.scale(1, 0.82);
+  }
+  const pelvisY = -11;
+  const shoulderY = -30;
+  const shoulderX = 8 * bodyScale;
+  const headY = -48;
+  const headW = 10 * bodyScale;
+  const headH = 12 * bodyScale;
+  const hipX = 5 * bodyScale;
+  const thighLen = 14 * bodyScale;
+  const calfLen = 14 * bodyScale;
+  const armLen = 12 * bodyScale;
+  const thighR = 4.8 * bodyScale;
+  const calfRTop = 3.8 * bodyScale;
+  const calfRBottom = 2.8 * bodyScale;
+  const armR = 3.5 * bodyScale;
+  const wristR = 2.6 * bodyScale;
+
+  const walkFrames = [
+    { lThigh: -0.5, lCalf: 0.85, rThigh: 0.45, rCalf: -0.6, lArm: 0.35, rArm: -0.3 },
+    { lThigh: -0.15, lCalf: 0.25, rThigh: 0.15, rCalf: -0.2, lArm: 0.08, rArm: -0.08 },
+    { lThigh: 0.45, lCalf: -0.6, rThigh: -0.5, rCalf: 0.85, lArm: -0.3, rArm: 0.35 },
+    { lThigh: 0.15, lCalf: -0.2, rThigh: -0.15, rCalf: 0.25, lArm: -0.08, rArm: 0.08 }
+  ];
+  const w = walkFrames[frame % 4];
+
+  function legEnd(hipX, hipY, thighA, calfA) {
+    const kx = Math.sin(thighA);
+    const ky = -Math.cos(thighA);
+    const kneeX = hipX + thighLen * kx;
+    const kneeY = hipY + thighLen * ky;
+    const calfA2 = thighA + calfA;
+    const kx2 = Math.sin(calfA2);
+    const ky2 = -Math.cos(calfA2);
+    return { kneeX, kneeY, footX: kneeX + calfLen * kx2, footY: kneeY + calfLen * ky2 };
+  }
+
+  const leftLeg = legEnd(-hipX, pelvisY, w.lThigh, w.lCalf);
+  const rightLeg = legEnd(hipX, pelvisY, w.rThigh, w.rCalf);
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  drawCapsule(ctx, -hipX, pelvisY, leftLeg.kneeX, leftLeg.kneeY, thighR, thighR * 0.9, skinLit, ink);
+  drawCapsule(ctx, leftLeg.kneeX, leftLeg.kneeY, leftLeg.footX, leftLeg.footY, calfRTop, calfRBottom, skinLit, ink);
+  drawCapsule(ctx, hipX, pelvisY, rightLeg.kneeX, rightLeg.kneeY, thighR, thighR * 0.9, skinShadow, ink);
+  drawCapsule(ctx, rightLeg.kneeX, rightLeg.kneeY, rightLeg.footX, rightLeg.footY, calfRTop, calfRBottom, skinShadow, ink);
+
+  if (bellyGlow > 0) {
+    ctx.save();
+    const g = ctx.createRadialGradient(0, pelvisY - 8, 0, 0, pelvisY - 8, 18);
+    g.addColorStop(0, `rgba(255, 80, 40, ${0.6 * bellyGlow})`);
+    g.addColorStop(0.6, `rgba(200, 40, 20, ${0.3 * bellyGlow})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(-20, pelvisY - 25, 40, 30);
+    ctx.restore();
+  }
+
+  const chestTop = shoulderY + 4;
+  const waistW = 9 * bodyScale;
+  const chestW = 12 * bodyScale;
+  ctx.fillStyle = skinLit;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-waistW / 2, pelvisY);
+  ctx.lineTo(-chestW / 2, chestTop);
+  ctx.quadraticCurveTo(-chestW / 2 - 0.5, shoulderY - 1, -shoulderX - 1, shoulderY);
+  ctx.lineTo(shoulderX + 1, shoulderY);
+  ctx.quadraticCurveTo(chestW / 2 + 0.5, shoulderY - 1, chestW / 2, chestTop);
+  ctx.lineTo(waistW / 2, pelvisY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  const neckTop = headY - headH / 2 + 1;
+  drawCapsule(ctx, 0, shoulderY + 5, 0, neckTop, 2.8 * bodyScale, 3.2 * bodyScale, skinLit, ink);
+  ctx.fillStyle = skinLit;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(0, headY, headW / 2, headH / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const lHandX = -shoulderX + armLen * Math.sin(w.lArm);
+  const lHandY = shoulderY + armLen * Math.cos(w.lArm);
+  const rHandX = shoulderX + armLen * Math.sin(w.rArm);
+  const rHandY = shoulderY + armLen * Math.cos(w.rArm);
+
+  drawCapsule(ctx, -shoulderX, shoulderY, lHandX, lHandY, armR, wristR, skinLit, ink);
+  drawCapsule(ctx, shoulderX, shoulderY, rHandX, rHandY, armR, wristR, skinShadow, ink);
+
+  ctx.fillStyle = flash ? skinLit : "rgba(255,252,248,0.5)";
+  ctx.beginPath();
+  ctx.arc(-5, headY - 2, 3.5, 0, Math.PI * 2);
+  ctx.arc(5, headY - 2, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.stroke();
+  ctx.fillStyle = flash ? skinLit : eyeGlowColor;
+  ctx.beginPath();
+  ctx.arc(-5, headY - 2, 2.2, 0, Math.PI * 2);
+  ctx.arc(5, headY - 2, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = flash ? skinLit : "#1a1815";
+  ctx.beginPath();
+  ctx.moveTo(-7, headY + 2);
+  ctx.quadraticCurveTo(0, headY + 12, 7, headY + 2);
+  ctx.lineTo(7, headY + 5);
+  ctx.quadraticCurveTo(0, headY + 16, -7, headY + 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  const hornLen = 12 * hornScale;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2 * hornScale;
+  ctx.beginPath();
+  ctx.moveTo(-12, headY - 2);
+  ctx.lineTo(-6 - hornLen * 0.5, headY - 14 - hornLen);
+  ctx.moveTo(12, headY - 2);
+  ctx.lineTo(6 + hornLen * 0.5, headY - 14 - hornLen);
+  ctx.stroke();
+
+  const wingSpan = 22 * wingScale;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-shoulderX - 2, shoulderY - 4);
+  ctx.quadraticCurveTo(-shoulderX - wingSpan, shoulderY - 12, -shoulderX - wingSpan * 0.7, shoulderY + 4);
+  ctx.moveTo(shoulderX + 2, shoulderY - 4);
+  ctx.quadraticCurveTo(shoulderX + wingSpan, shoulderY - 12, shoulderX + wingSpan * 0.7, shoulderY + 4);
+  ctx.stroke();
+
+  if (hunched) ctx.restore();
+}
+
 const keys = {
   left: false,
   right: false,
@@ -710,11 +889,13 @@ class Knight extends Entity {
       top: hitY,
       bottom: hitY + hitH
     };
+    const swordDamage = 5;
+    const knightCenterX = this.x + this.w / 2;
 
     demons.forEach(demon => {
       if (!demon.alive) return;
       if (rectsOverlap(hitbox, demon)) {
-        demon.takeHit();
+        demon.takeHit(swordDamage, knightCenterX);
         this.score += 25;
       }
     });
@@ -769,65 +950,310 @@ class Knight extends Entity {
   }
 }
 
+const DEMON_TYPES = { FOOT: "footsoldier", BRIMSTONE: "brimstone", VANGUARD: "vanguard" };
+
+const GROUND_Y = GAME_HEIGHT - 40;
+const ARENA_LEFT = 60;
+const ARENA_RIGHT = GAME_WIDTH - 60;
+const STUN_KNOCKBACK_SPEED = 280;
+const STUN_DURATION = 0.5;
+const DEMON_FLASH_DURATION = 0.12;
+
 class Demon extends Entity {
-  constructor(x, level) {
-    const w = 42;
-    const h = 54;
-    const groundY = GAME_HEIGHT - 40;
-    super(x, groundY - h, w, h);
-    this.speed = 90 + level * 12 + Math.random() * 15;
-    this.damage = 12 + level * 2;
+  constructor(x, level, type) {
+    const stats = getDemonStats(type);
+    const w = stats.w;
+    const h = stats.h;
+    super(x, GROUND_Y - h, w, h);
+    this.type = type;
+    this.level = level;
+    this.maxHealth = stats.maxHealth;
+    this.health = stats.maxHealth;
     this.alive = true;
-    this.attackCooldown = 0;
     this.animTime = 0;
-    this.facing = -1;
+    this.facing = x < GAME_WIDTH / 2 ? 1 : -1;
+    this.attackCooldown = 0;
+    this.stunTime = 0;
+    this.speed = stats.speed;
+    this.damage = stats.damage;
+    this.ramDamage = stats.ramDamage != null ? stats.ramDamage : stats.damage;
+    this.meleeDamage = stats.meleeDamage != null ? stats.meleeDamage : stats.damage;
+    this.state = stats.initialState || "approach";
+    this.stateTime = 0;
+    this.chargeTime = 0;
+    this.hasRammed = false;
+    this.edgeX = x < GAME_WIDTH / 2 ? ARENA_LEFT : ARENA_RIGHT;
+    this.flashUntil = 0;
   }
 
-  update(dt, knight) {
+  takeHit(damage, knightCenterX) {
     if (!this.alive) return;
-    const dir = knight.x < this.x ? -1 : 1;
-    this.facing = dir;
-    this.vx = dir * this.speed;
-
-    this.x += this.vx * dt;
-
-    const groundY = GAME_HEIGHT - 40;
-    this.y = groundY - this.h;
-
-    if (this.attackCooldown > 0) this.attackCooldown -= dt;
-
-    if (rectsOverlap(this, knight) && this.attackCooldown <= 0) {
-      knight.takeHit(this.damage);
-      this.attackCooldown = 0.9;
+    this.health -= damage;
+    this.flashUntil = DEMON_FLASH_DURATION;
+    if (this.health <= 0) {
+      this.alive = false;
+      return;
     }
+    if (this.type === DEMON_TYPES.FOOT || this.type === DEMON_TYPES.BRIMSTONE) {
+      this.stunTime = STUN_DURATION;
+      const myCenterX = this.x + this.w / 2;
+      this.vx = Math.sign(myCenterX - knightCenterX) * STUN_KNOCKBACK_SPEED;
+    }
+  }
+
+  update(dt, knight, game) {
+    if (!this.alive) return;
 
     this.animTime += dt;
+    const groundY = GROUND_Y;
+    this.y = groundY - this.h;
+
+    if (this.flashUntil > 0) this.flashUntil -= dt;
+    if (this.stunTime > 0) {
+      this.stunTime -= dt;
+      this.x += this.vx * dt;
+      this.vx *= 0.92;
+      if (this.x < ARENA_LEFT) this.x = ARENA_LEFT;
+      if (this.x > ARENA_RIGHT - this.w) this.x = ARENA_RIGHT - this.w;
+      return;
+    }
+
+    this.facing = knight.x < this.x + this.w / 2 ? -1 : 1;
+
+    if (this.type === DEMON_TYPES.FOOT) {
+      this.updateFootSoldier(dt, knight);
+    } else if (this.type === DEMON_TYPES.BRIMSTONE) {
+      this.updateBrimstone(dt, knight, game);
+    } else if (this.type === DEMON_TYPES.VANGUARD) {
+      this.updateVanguard(dt, knight);
+    }
+
+    this.x += this.vx * dt;
+    if (this.x < ARENA_LEFT) this.x = ARENA_LEFT;
+    if (this.x > ARENA_RIGHT - this.w) this.x = ARENA_RIGHT - this.w;
   }
 
-  takeHit() {
-    this.alive = false;
+  updateFootSoldier(dt, knight) {
+    const approachSpeed = this.speed;
+    const plungeSpeed = 420;
+    const standDuration = 0.35;
+    const windupDuration = 0.45;
+    const plungeDuration = 0.25;
+
+    if (this.state === "approach") {
+      const dist = Math.abs((this.x + this.w / 2) - knight.x);
+      if (dist < 90) {
+        this.state = "stand";
+        this.stateTime = 0;
+        this.vx = 0;
+      } else {
+        this.vx = this.facing * approachSpeed;
+      }
+    } else if (this.state === "stand") {
+      this.vx = 0;
+      this.stateTime += dt;
+      if (this.stateTime >= standDuration) {
+        this.state = "windup";
+        this.stateTime = 0;
+      }
+    } else if (this.state === "windup") {
+      this.vx = 0;
+      this.stateTime += dt;
+      if (this.stateTime >= windupDuration) {
+        this.state = "plunge";
+        this.stateTime = 0;
+        this.vx = this.facing * plungeSpeed;
+      }
+    } else if (this.state === "plunge") {
+      this.stateTime += dt;
+      if (this.stateTime >= plungeDuration) {
+        this.vx = 0;
+        this.state = "approach";
+      }
+      if (rectsOverlap(this, knight) && this.attackCooldown <= 0) {
+        knight.takeHit(this.damage);
+        this.attackCooldown = 0.9;
+      }
+    }
+
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+  }
+
+  updateBrimstone(dt, knight, game) {
+    const walkSpeed = 35;
+    const chargeDuration = 0.8;
+    const fireInterval = 2.2;
+
+    this.vx = 0;
+    const centerX = this.x + this.w / 2;
+    const distToEdge = Math.abs(centerX - this.edgeX);
+    if (distToEdge > 15) {
+      this.vx = Math.sign(this.edgeX - centerX) * walkSpeed;
+    }
+
+    if (this.state === "idle") {
+      this.stateTime += dt;
+      if (this.stateTime >= fireInterval) {
+        this.state = "charge";
+        this.stateTime = 0;
+      }
+    } else if (this.state === "charge") {
+      this.chargeTime += dt;
+      this.stateTime += dt;
+      if (this.stateTime >= chargeDuration) {
+        this.fireFlame(knight, game);
+        this.state = "idle";
+        this.stateTime = 0;
+        this.chargeTime = 0;
+      }
+    }
+  }
+
+  fireFlame(knight, game) {
+    const cx = this.x + this.w / 2;
+    const cy = this.y + this.h / 2;
+    const dx = knight.x + knight.w / 2 - cx;
+    const dy = knight.y + knight.h / 2 - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const speed = 320;
+    game.projectiles.push({
+      x: cx,
+      y: cy,
+      vx: (dx / len) * speed,
+      vy: (dy / len) * speed,
+      damage: 8,
+      w: 14,
+      h: 14,
+      life: 1.5
+    });
+  }
+
+  updateVanguard(dt, knight) {
+    const walkSpeed = 45;
+    const roarDuration = 2.5;
+    const ramSpeed = 380;
+    const ramDuration = 0.6;
+
+    if (this.state === "roar") {
+      this.vx = 0;
+      this.stateTime += dt;
+      this.chargeTime += dt;
+      if (this.stateTime >= roarDuration) {
+        this.state = "ram";
+        this.stateTime = 0;
+        this.vx = this.facing * ramSpeed;
+      }
+    } else if (this.state === "ram") {
+      this.stateTime += dt;
+      if (this.stateTime >= ramDuration) {
+        this.vx = 0;
+        this.hasRammed = true;
+        this.state = "approach";
+      }
+      if (rectsOverlap(this, knight)) {
+        knight.takeHit(this.ramDamage);
+        this.vx = 0;
+        this.state = "approach";
+      }
+    } else if (this.state === "windup_claw") {
+      this.vx = 0;
+      this.stateTime += dt;
+      this.chargeTime += dt;
+      if (this.stateTime >= 0.5) {
+        const dist = Math.abs((this.x + this.w / 2) - (knight.x + knight.w / 2));
+        if (dist < 85) knight.takeHit(this.meleeDamage);
+        this.attackCooldown = 1.2;
+        this.state = "approach";
+        this.chargeTime = 0;
+      }
+    } else if (this.state === "approach") {
+      const dist = Math.abs((this.x + this.w / 2) - (knight.x + knight.w / 2));
+      if (dist < 70 && this.attackCooldown <= 0) {
+        this.state = "windup_claw";
+        this.stateTime = 0;
+        this.chargeTime = 0;
+        this.vx = 0;
+      } else {
+        this.vx = this.facing * walkSpeed;
+      }
+    }
+
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
   }
 
   draw(ctx) {
     if (!this.alive) return;
-    const groundY = GAME_HEIGHT - 40;
-    const shadowY = groundY - 4;
+    const shadowY = GROUND_Y - 4;
     const centerX = this.x + this.w / 2;
 
     ctx.save();
     drawInkShadow(ctx, centerX, shadowY, this.w * 0.5, 12, 0.75);
     ctx.restore();
 
-    const footOffsetY = 39;
+    const footOffsetY = this.type === DEMON_TYPES.VANGUARD ? 61 : 39;
     ctx.save();
     ctx.translate(this.x + this.w / 2, this.y + this.h + footOffsetY);
     ctx.scale(this.facing, 1);
 
-    const frame = animFrame(this.animTime, 4);
-    drawDemonHumanoid(ctx, frame);
+    if (this.type === DEMON_TYPES.FOOT) {
+      drawFootSoldierDemon(ctx, this.state, animFrame(this.animTime, 4), this.stunTime > 0, false);
+    } else if (this.type === DEMON_TYPES.BRIMSTONE) {
+      drawBrimstoneDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), false);
+    } else {
+      drawVanguardDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), false);
+    }
+
+    if (this.flashUntil > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.75;
+      if (this.type === DEMON_TYPES.FOOT) {
+        drawFootSoldierDemon(ctx, this.state, animFrame(this.animTime, 4), this.stunTime > 0, true);
+      } else if (this.type === DEMON_TYPES.BRIMSTONE) {
+        drawBrimstoneDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), true);
+      } else {
+        drawVanguardDemon(ctx, this.state, this.chargeTime, animFrame(this.animTime, 4), true);
+      }
+      ctx.restore();
+    }
 
     ctx.restore();
   }
+}
+
+function getDemonStats(type) {
+  if (type === DEMON_TYPES.FOOT) {
+    return {
+      w: 38,
+      h: 68,
+      maxHealth: 10,
+      speed: 95,
+      damage: 12,
+      initialState: "approach"
+    };
+  }
+  if (type === DEMON_TYPES.BRIMSTONE) {
+    return {
+      w: 40,
+      h: 62,
+      maxHealth: 6,
+      speed: 35,
+      damage: 0,
+      initialState: "idle"
+    };
+  }
+  if (type === DEMON_TYPES.VANGUARD) {
+    return {
+      w: 58,
+      h: 88,
+      maxHealth: 25,
+      speed: 45,
+      damage: 25,
+      ramDamage: 25,
+      meleeDamage: 18,
+      initialState: "roar"
+    };
+  }
+  return { w: 42, h: 54, maxHealth: 10, speed: 90, damage: 12, initialState: "approach" };
 }
 
 function rectsOverlap(a, b) {
@@ -843,6 +1269,7 @@ class Game {
   constructor() {
     this.knight = new Knight();
     this.demons = [];
+    this.projectiles = [];
     this.spawnTimer = 0;
     this.spawnInterval = 2.4;
     this.level = 1;
@@ -856,6 +1283,7 @@ class Game {
   reset() {
     this.knight = new Knight();
     this.demons = [];
+    this.projectiles = [];
     this.spawnTimer = 0;
     this.spawnInterval = 2.4;
     this.level = 1;
@@ -876,10 +1304,18 @@ class Game {
   }
 
   spawnDemon() {
-    const margin = 80;
+    const roll = Math.random();
+    let type = DEMON_TYPES.FOOT;
+    if (roll < 0.35) type = DEMON_TYPES.BRIMSTONE;
+    else if (roll < 0.55) type = DEMON_TYPES.VANGUARD;
     const spawnLeft = Math.random() < 0.5;
-    const x = spawnLeft ? 20 : GAME_WIDTH - margin;
-    this.demons.push(new Demon(x, this.level));
+    let x;
+    if (type === DEMON_TYPES.BRIMSTONE || type === DEMON_TYPES.VANGUARD) {
+      x = spawnLeft ? ARENA_LEFT : ARENA_RIGHT - getDemonStats(type).w;
+    } else {
+      x = spawnLeft ? ARENA_LEFT + 30 : ARENA_RIGHT - getDemonStats(type).w - 30;
+    }
+    this.demons.push(new Demon(x, this.level, type));
   }
 
   update(dt) {
@@ -889,7 +1325,7 @@ class Game {
 
     const baseInterval = 2.0;
     const difficultyFactor = 0.08;
-    this.spawnInterval = Math.max(0.6, baseInterval - this.level * difficultyFactor);
+    this.spawnInterval = Math.max(0.8, baseInterval - this.level * difficultyFactor);
     this.spawnTimer += dt;
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
@@ -901,7 +1337,20 @@ class Game {
 
     this.knight.update(dt, this.demons);
 
-    this.demons.forEach(demon => demon.update(dt, this.knight));
+    this.demons.forEach(demon => demon.update(dt, this.knight, this));
+
+    this.projectiles.forEach(p => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) return;
+      const pr = { left: p.x - p.w / 2, right: p.x + p.w / 2, top: p.y - p.h / 2, bottom: p.y + p.h / 2 };
+      if (rectsOverlap(pr, this.knight)) {
+        this.knight.takeHit(p.damage);
+        p.life = 0;
+      }
+    });
+    this.projectiles = this.projectiles.filter(p => p.life > 0 && p.x > -50 && p.x < GAME_WIDTH + 50);
 
     this.demons = this.demons.filter(d => d.alive || d.x > -80 && d.x < GAME_WIDTH + 80);
 
@@ -1015,6 +1464,19 @@ class Game {
   draw(ctx) {
     this.drawBackground(ctx);
     this.knight.draw(ctx);
+    this.projectiles.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.w);
+      g.addColorStop(0, "rgba(255, 80, 40, 0.95)");
+      g.addColorStop(0.5, "rgba(200, 40, 20, 0.7)");
+      g.addColorStop(1, "rgba(120, 20, 10, 0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, p.w, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
     this.demons.forEach(d => d.draw(ctx));
   }
 
