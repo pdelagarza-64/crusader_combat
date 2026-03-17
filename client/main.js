@@ -14,7 +14,10 @@ const ui = {
   playerNameInput: document.getElementById("player-name-input"),
   saveScoreBtn: document.getElementById("save-score"),
   playAgainBtn: document.getElementById("play-again"),
-  leaderboardList: document.getElementById("leaderboard-list")
+  leaderboardList: document.getElementById("leaderboard-list"),
+  pauseOverlay: document.getElementById("pause-overlay"),
+  pauseResumeBtn: document.getElementById("pause-resume"),
+  pauseLeaveBtn: document.getElementById("pause-leave")
 };
 
 // Debug helpers (enable by setting `window.DEBUG_PERF = true` in DevTools console, then refresh)
@@ -992,7 +995,8 @@ class Knight extends Entity {
 
     this.vy += gravity * dt;
 
-    this.x += this.vx * dt;
+    const walkMultiplier = keys.block ? 0.5 : 1;
+    this.x += this.vx * dt * walkMultiplier;
     this.y += this.vy * dt;
 
     const groundY = GROUND_Y;
@@ -1695,6 +1699,13 @@ class Game {
     this.campaignWaveQueue = [];
     this.waveStartTime = 0;
     this.campaignCinematicActive = false;
+    this.paused = false;
+    this.pauseMusicElapsed = 0;
+    this.pauseMusicDuration = 0.5;
+    this.pauseMusicStartRate = 1;
+    this.pauseMusicStartVolume = 1;
+    this.pauseMusicTargetRate = 1;
+    this.pauseMusicTargetVolume = 1;
     this.loop = this.loop.bind(this);
 
     // Debug counters
@@ -1732,6 +1743,8 @@ class Game {
       this.waveStartTime = 0;
     }
     ui.overlay.classList.add("hidden");
+    if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
+    this.paused = false;
     canvas.focus();
     requestAnimationFrame(this.loop);
   }
@@ -1770,6 +1783,42 @@ class Game {
     if (typeof startStageMusic === "function") startStageMusic(stageIndex);
   }
 
+  setPaused(paused) {
+    if (this.paused === paused) return;
+    this.paused = paused;
+    const el = typeof currentStageMusicEl !== "undefined" ? currentStageMusicEl : null;
+    this.pauseMusicDuration = 0.5;
+    this.pauseMusicElapsed = 0;
+    if (paused) {
+      this.pauseMusicStartRate = el ? el.playbackRate : 1;
+      this.pauseMusicStartVolume = el ? el.volume : 1;
+      this.pauseMusicTargetRate = 0.75;
+      this.pauseMusicTargetVolume = 0.5;
+      if (ui.pauseOverlay) ui.pauseOverlay.classList.remove("hidden");
+    } else {
+      this.pauseMusicStartRate = el ? el.playbackRate : 1;
+      this.pauseMusicStartVolume = el ? el.volume : 1;
+      this.pauseMusicTargetRate = 1;
+      this.pauseMusicTargetVolume = 1;
+      if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
+    }
+  }
+
+  updatePauseMusicTransition(dt) {
+    const el = typeof currentStageMusicEl !== "undefined" ? currentStageMusicEl : null;
+    if (!el) return;
+    this.pauseMusicElapsed = Math.min(this.pauseMusicDuration, this.pauseMusicElapsed + dt);
+    const t = this.pauseMusicDuration > 0 ? this.pauseMusicElapsed / this.pauseMusicDuration : 1;
+    const rate = this.pauseMusicStartRate + (this.pauseMusicTargetRate - this.pauseMusicStartRate) * t;
+    const vol = this.pauseMusicStartVolume + (this.pauseMusicTargetVolume - this.pauseMusicStartVolume) * t;
+    el.playbackRate = rate;
+    el.volume = vol;
+    if (t >= 1) {
+      el.playbackRate = this.pauseMusicTargetRate;
+      el.volume = this.pauseMusicTargetVolume;
+    }
+  }
+
   spawnDemon() {
     // Endless mode: foot = easiest, vanguard = hardest. Weights shift with level.
     const level = this.level;
@@ -1802,6 +1851,11 @@ class Game {
   update(dt) {
     if (this.gameOver) return;
     if (this.campaignCinematicActive) return;
+    // Run music transition whenever it's in progress (pause → slow/dim or resume → full)
+    if (this.pauseMusicElapsed < this.pauseMusicDuration) {
+      this.updatePauseMusicTransition(dt);
+    }
+    if (this.paused) return;
     if (!this.knight || !Number.isFinite(dt) || dt <= 0) return;
 
     this.time += dt;
@@ -2563,10 +2617,19 @@ function stopTitleMusic() {
 
 const STAGE_MUSIC_IDS = ["stage-music-0", "stage-music-1", "stage-music-2"];
 
+let currentStageMusicEl = null;
+
 function stopStageMusic() {
+  if (currentStageMusicEl) {
+    currentStageMusicEl.playbackRate = 1;
+    currentStageMusicEl.volume = 1;
+    currentStageMusicEl.pause();
+    currentStageMusicEl.currentTime = 0;
+    currentStageMusicEl = null;
+  }
   STAGE_MUSIC_IDS.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) {
+    if (el && el !== currentStageMusicEl) {
       el.pause();
       el.currentTime = 0;
     }
@@ -2578,7 +2641,10 @@ function startStageMusic(stageIndex) {
   stopStageMusic();
   const el = document.getElementById(STAGE_MUSIC_IDS[stageIndex]);
   if (!el) return;
+  currentStageMusicEl = el;
   if (titleMusic) el.muted = titleMusic.muted;
+  el.playbackRate = 1;
+  el.volume = 1;
   el.currentTime = 0;
   const p = el.play();
   if (p && typeof p.catch === "function") p.catch(() => {});
@@ -2784,6 +2850,22 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+// ESC during combat: pause (or resume) the game
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || VOLUME_MEDIA_KEYS.has(e.key)) return;
+  if (titleScreenActive) return;
+  if (game.gameOver || game.campaignCinematicActive) return;
+  if (ui.overlay && !ui.overlay.classList.contains("hidden")) return;
+  const pauseVisible = ui.pauseOverlay && !ui.pauseOverlay.classList.contains("hidden");
+  if (pauseVisible) {
+    game.setPaused(false);
+    e.preventDefault();
+    return;
+  }
+  game.setPaused(true);
+  e.preventDefault();
+});
+
 const campaignStageSelect = document.getElementById("campaign-stage-select");
 const campaignStageBack = document.getElementById("campaign-stage-back");
 
@@ -2858,6 +2940,20 @@ function returnToTitleAfterCampaign() {
   if (typeof stopStageMusic === "function") stopStageMusic();
   if (campaignTransitionCinematic) campaignTransitionCinematic.classList.add("hidden");
   if (ui.overlay) ui.overlay.classList.add("hidden");
+  if (titleScreen) titleScreen.classList.remove("hidden");
+  titleScreenActive = true;
+  if (titleMusic) {
+    titleMusic.currentTime = 0;
+    const p = titleMusic.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }
+}
+
+function leaveToTitleFromPause() {
+  game.paused = false;
+  if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
+  if (typeof stopStageMusic === "function") stopStageMusic();
+  game.reset();
   if (titleScreen) titleScreen.classList.remove("hidden");
   titleScreenActive = true;
   if (titleMusic) {
@@ -2973,6 +3069,21 @@ const game = new Game();
 ui.playAgainBtn.addEventListener("click", () => {
   game.reset();
 });
+
+if (ui.pauseResumeBtn) {
+  ui.pauseResumeBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    game.setPaused(false);
+  });
+}
+if (ui.pauseLeaveBtn) {
+  ui.pauseLeaveBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    leaveToTitleFromPause();
+  });
+}
 
 ui.saveScoreBtn.addEventListener("click", async () => {
   if (!game.lastResult) return;

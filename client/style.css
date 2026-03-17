@@ -1145,6 +1145,21 @@ canvas#game {
   font-size: 14px;
 }
 
+.pause-panel h2 {
+  margin-bottom: 8px;
+}
+
+.pause-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.pause-buttons .primary {
+  margin-top: 0;
+}
+
 .score-entry {
   display: flex;
   align-items: flex-end;
