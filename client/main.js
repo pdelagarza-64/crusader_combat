@@ -17,7 +17,9 @@ const ui = {
   leaderboardList: document.getElementById("leaderboard-list"),
   pauseOverlay: document.getElementById("pause-overlay"),
   pauseResumeBtn: document.getElementById("pause-resume"),
-  pauseLeaveBtn: document.getElementById("pause-leave")
+  pauseLeaveBtn: document.getElementById("pause-leave"),
+  gameTouchActions: document.getElementById("game-touch-actions"),
+  btnJump: document.getElementById("btn-jump")
 };
 
 // Debug helpers (enable by setting `window.DEBUG_PERF = true` in DevTools console, then refresh)
@@ -860,6 +862,7 @@ const keys = {
   keyW: false,
   space: false,
   arrowUp: false,
+  jumpPressed: false,
   attack: false,
   block: false
 };
@@ -884,11 +887,7 @@ function isTypingInTitleInput() {
   return titleEl && titleEl.contains(el);
 }
 
-window.addEventListener("keydown", e => {
-  if (isTypingInOverlay()) return;
-  if (isTypingInTitleInput()) return;
-  if (isGameKey(e.code)) e.preventDefault();
-
+function applyKeyDown(e) {
   if (e.code === "KeyA") keys.left = true;
   if (e.code === "KeyD") keys.right = true;
   if (e.code === "KeyW") { keys.keyW = true; keys.up = true; }
@@ -896,13 +895,9 @@ window.addEventListener("keydown", e => {
   if (e.code === "ArrowUp") { keys.arrowUp = true; keys.up = true; }
   if (e.code === "KeyJ") keys.attack = true;
   if (e.code === "KeyK") keys.block = true;
-});
+}
 
-window.addEventListener("keyup", e => {
-  if (isTypingInOverlay()) return;
-  if (isTypingInTitleInput()) return;
-  if (isGameKey(e.code)) e.preventDefault();
-
+function applyKeyUp(e) {
   if (e.code === "KeyA") keys.left = false;
   if (e.code === "KeyD") keys.right = false;
   if (e.code === "KeyW") { keys.keyW = false; keys.up = keys.space || keys.arrowUp; }
@@ -910,7 +905,37 @@ window.addEventListener("keyup", e => {
   if (e.code === "ArrowUp") { keys.arrowUp = false; keys.up = keys.keyW || keys.space; }
   if (e.code === "KeyJ") keys.attack = false;
   if (e.code === "KeyK") keys.block = false;
+}
+
+window.addEventListener("keydown", e => {
+  if (isTypingInOverlay()) return;
+  if (isTypingInTitleInput()) return;
+  if (isGameKey(e.code)) e.preventDefault();
+  applyKeyDown(e);
 });
+
+window.addEventListener("keyup", e => {
+  if (isTypingInOverlay()) return;
+  if (isTypingInTitleInput()) return;
+  if (isGameKey(e.code)) e.preventDefault();
+  applyKeyUp(e);
+});
+
+if (canvas) {
+  canvas.addEventListener("click", () => canvas.focus(), false);
+  canvas.addEventListener("keydown", e => {
+    if (!isGameKey(e.code)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    applyKeyDown(e);
+  }, false);
+  canvas.addEventListener("keyup", e => {
+    if (!isGameKey(e.code)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    applyKeyUp(e);
+  }, false);
+}
 
 class Entity {
   constructor(x, y, w, h) {
@@ -942,6 +967,7 @@ class Knight extends Entity {
     const w = 38;
     const h = 68;
     super(120, GAME_HEIGHT - h - 40, w, h);
+    this.onGround = true;
     this.maxHealth = 100;
     this.health = this.maxHealth;
     this.facing = 1;
@@ -991,10 +1017,11 @@ class Knight extends Entity {
     if (this.vx > 10) this.facing = 1;
     else if (this.vx < -10) this.facing = -1;
 
-    const wantJump = keys.up && this.onGround;
+    const wantJump = (keys.up || keys.jumpPressed) && this.onGround;
     if (wantJump) {
       this.vy = jumpVelocity;
       this.onGround = false;
+      keys.jumpPressed = false;
     }
 
     this.vy += gravity * dt;
@@ -1764,6 +1791,8 @@ class Game {
       const stage = CAMPAIGN_STAGES[campaignStageIndex];
       this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
       if (typeof startStageMusic === "function") startStageMusic(campaignStageIndex);
+    } else if (this.mode === "endless") {
+      if (typeof startEndlessMusic === "function") startEndlessMusic();
     }
     this.campaignCinematicActive = false;
     canvas.focus();
@@ -2471,6 +2500,7 @@ class Game {
   endGame(victory) {
     this.gameOver = true;
     if (typeof stopStageMusic === "function") stopStageMusic();
+    if (this.mode === "endless" && typeof stopEndlessMusic === "function") stopEndlessMusic();
     if (ui.overlayTitle) ui.overlayTitle.textContent = victory ? "Victory" : "Fallen Crusader";
     const finalScore = this.knight ? Math.round(this.knight.score) : 0;
     const survivedSeconds = Math.floor(this.time);
@@ -2479,6 +2509,7 @@ class Game {
       ui.playerNameInput.value = currentCrusaderName;
     }
     ui.overlay.classList.remove("hidden");
+    if (ui.gameTouchActions) ui.gameTouchActions.classList.add("hidden");
     this.updateHud();
     this.lastResult = { score: finalScore, survivedSeconds };
     fetchLeaderboard();
@@ -2643,6 +2674,7 @@ function stopStageMusic() {
 function startStageMusic(stageIndex) {
   if (stageIndex < 0 || stageIndex >= STAGE_MUSIC_IDS.length) return;
   stopStageMusic();
+  stopEndlessMusic();
   const el = document.getElementById(STAGE_MUSIC_IDS[stageIndex]);
   if (!el) return;
   currentStageMusicEl = el;
@@ -2654,11 +2686,58 @@ function startStageMusic(stageIndex) {
   if (p && typeof p.catch === "function") p.catch(() => {});
 }
 
+const ENDLESS_MUSIC_1_ID = "endless-music-1";
+const ENDLESS_MUSIC_2_ID = "endless-music-2";
+
+function stopEndlessMusic() {
+  const el1 = document.getElementById(ENDLESS_MUSIC_1_ID);
+  const el2 = document.getElementById(ENDLESS_MUSIC_2_ID);
+  if (currentStageMusicEl === el1 || currentStageMusicEl === el2) {
+    currentStageMusicEl.playbackRate = 1;
+    currentStageMusicEl.volume = 1;
+    currentStageMusicEl = null;
+  }
+  if (el1) {
+    el1.pause();
+    el1.currentTime = 0;
+    el1.onended = null;
+  }
+  if (el2) {
+    el2.pause();
+    el2.currentTime = 0;
+  }
+}
+
+function startEndlessMusic() {
+  stopStageMusic();
+  stopEndlessMusic();
+  const el1 = document.getElementById(ENDLESS_MUSIC_1_ID);
+  const el2 = document.getElementById(ENDLESS_MUSIC_2_ID);
+  if (!el1 || !el2) return;
+  currentStageMusicEl = el1;
+  if (titleMusic) el1.muted = titleMusic.muted;
+  el1.playbackRate = 1;
+  el1.volume = 1;
+  el1.currentTime = 0;
+  el1.onended = () => {
+    currentStageMusicEl = el2;
+    if (titleMusic) el2.muted = titleMusic.muted;
+    el2.playbackRate = 1;
+    el2.volume = 1;
+    el2.currentTime = 0;
+    const p = el2.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  };
+  const p = el1.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
+}
+
 function startFromTitleScreen(mode, campaignStageIndex) {
   if (!titleScreenActive) return;
   titleScreenActive = false;
   stopTitleMusic();
   if (titleScreen) titleScreen.classList.add("hidden");
+  if (ui.gameTouchActions) ui.gameTouchActions.classList.remove("hidden");
   canvas.focus();
   game.start(mode, campaignStageIndex);
 }
@@ -2951,9 +3030,11 @@ function showCampaignTransitionCinematic(transitionIndex) {
 function returnToTitleAfterCampaign() {
   game.gameOver = true;
   if (typeof stopStageMusic === "function") stopStageMusic();
+  if (typeof stopEndlessMusic === "function") stopEndlessMusic();
   if (campaignTransitionCinematic) campaignTransitionCinematic.classList.add("hidden");
   if (ui.overlay) ui.overlay.classList.add("hidden");
   if (titleScreen) titleScreen.classList.remove("hidden");
+  if (ui.gameTouchActions) ui.gameTouchActions.classList.add("hidden");
   titleScreenActive = true;
   if (titleMusic) {
     titleMusic.currentTime = 0;
@@ -2967,9 +3048,11 @@ function leaveToTitleFromPause() {
   game.paused = false;
   if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
   if (typeof stopStageMusic === "function") stopStageMusic();
+  if (typeof stopEndlessMusic === "function") stopEndlessMusic();
   game.campaignStageIndex = -1;
   game.reset();
   if (titleScreen) titleScreen.classList.remove("hidden");
+  if (ui.gameTouchActions) ui.gameTouchActions.classList.add("hidden");
   titleScreenActive = true;
   if (titleMusic) {
     titleMusic.currentTime = 0;
@@ -3084,7 +3167,16 @@ const game = new Game();
 
 ui.playAgainBtn.addEventListener("click", () => {
   game.reset();
+  if (ui.gameTouchActions) ui.gameTouchActions.classList.remove("hidden");
 });
+
+if (ui.btnJump) {
+  ui.btnJump.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    keys.jumpPressed = true;
+  });
+}
 
 if (ui.pauseResumeBtn) {
   ui.pauseResumeBtn.addEventListener("click", (e) => {

@@ -26,6 +26,12 @@
       <source src="audio/stage2.mp3" type="audio/mpeg" />
       <source src="audio/stage2.ogg" type="audio/ogg" />
     </audio>
+    <audio id="endless-music-1" preload="auto">
+      <source src="audio/endlessmode.m4a" type="audio/mp4" />
+    </audio>
+    <audio id="endless-music-2" loop preload="auto">
+      <source src="audio/endlessmode2.mp3" type="audio/mpeg" />
+    </audio>
     <div id="title-screen" class="title-screen">
       <svg aria-hidden="true" class="title-screen-filters">
         <defs>
@@ -342,7 +348,10 @@
         </div>
       </div>
       <div class="help">
-        <span>Move: A / D &nbsp; Jump: W or Space &nbsp; Attack: J &nbsp; Block: K</span>
+        <span>Move: A / D &nbsp; Jump: W / Space / ↑ or tap below &nbsp; Attack: J &nbsp; Block: K</span>
+      </div>
+      <div class="game-touch-actions hidden" id="game-touch-actions" aria-hidden="true">
+        <button type="button" id="btn-jump" class="game-action-btn game-action-jump" aria-label="Jump">Jump</button>
       </div>
     </div>
 

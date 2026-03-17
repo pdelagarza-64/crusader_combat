@@ -19,6 +19,11 @@ Campaign stage music (one track per stage):
 The game plays the matching track when you start or advance to that stage.
 If a file is missing, that stage will run silently (no error).
 
+Endless mode music (two tracks):
+
+  - endlessmode.m4a   Plays once when Endless Mode starts.
+  - endlessmode2.mp3  Plays on loop after endlessmode.m4a finishes, until you die or leave to title.
+
 You can find royalty-free choir or ambient music at:
   - https://pixabay.com/music/
   - https://freemusicarchive.org/

@@ -123,6 +123,42 @@ body {
   text-transform: uppercase;
 }
 
+.game-touch-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.game-touch-actions.hidden {
+  display: none;
+}
+
+.game-action-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: 1px solid #2a3028;
+  background: #1e2620;
+  color: #b8b4ac;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.game-action-btn:hover,
+.game-action-btn:focus {
+  background: #2a3228;
+  color: #d8d6d0;
+}
+
+.game-action-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
 /* ---------- Title screen ---------- */
 .title-screen {
   position: fixed;
