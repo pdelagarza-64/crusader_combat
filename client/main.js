@@ -1724,6 +1724,7 @@ class Game {
       this.waveStartTime = 0;
       const stage = CAMPAIGN_STAGES[this.campaignStageIndex];
       this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
+      if (typeof startStageMusic === "function") startStageMusic(this.campaignStageIndex);
     } else {
       this.campaignStageIndex = -1;
       this.campaignWaveIndex = -1;
@@ -1745,6 +1746,7 @@ class Game {
       this.waveStartTime = this.time;
       const stage = CAMPAIGN_STAGES[campaignStageIndex];
       this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
+      if (typeof startStageMusic === "function") startStageMusic(campaignStageIndex);
     }
     this.campaignCinematicActive = false;
     canvas.focus();
@@ -1765,13 +1767,24 @@ class Game {
     this.waveStartTime = this.time;
     const stage = CAMPAIGN_STAGES[stageIndex];
     this.campaignWaveQueue = (stage.waves[0] || []).map((e) => ({ type: e.type, delay: e.delay }));
+    if (typeof startStageMusic === "function") startStageMusic(stageIndex);
   }
 
   spawnDemon() {
+    // Endless mode: foot = easiest, vanguard = hardest. Weights shift with level.
+    const level = this.level;
+    let footW = Math.max(0.12, 1.25 - level * 0.035);
+    let brimstoneW = level >= 2 ? Math.min(0.55, (level - 2) * 0.025) : 0;
+    let vanguardW = level >= 5 ? Math.min(0.55, (level - 5) * 0.02) : 0;
+    const total = footW + brimstoneW + vanguardW;
+    footW /= total;
+    brimstoneW /= total;
+    vanguardW /= total;
     const roll = Math.random();
     let type = DEMON_TYPES.FOOT;
-    if (roll < 0.35) type = DEMON_TYPES.BRIMSTONE;
-    else if (roll < 0.55) type = DEMON_TYPES.VANGUARD;
+    if (roll < footW) type = DEMON_TYPES.FOOT;
+    else if (roll < footW + brimstoneW) type = DEMON_TYPES.BRIMSTONE;
+    else type = DEMON_TYPES.VANGUARD;
     this.spawnDemonByType(type);
   }
 
@@ -1815,16 +1828,18 @@ class Game {
         this.campaignWaveQueue = (stage.waves[this.campaignWaveIndex] || []).map((e) => ({ type: e.type, delay: e.delay }));
       }
     } else {
-      const baseInterval = 2.0;
-      const difficultyFactor = 0.08;
-      this.spawnInterval = Math.max(0.8, baseInterval - this.level * difficultyFactor);
+      // Endless: level rises with time forever (no cap). Spawns get faster and harder.
+      this.level = 1 + Math.floor(this.time / 25);
+      const baseInterval = 2.8;
+      const minInterval = 0.5;
+      this.spawnInterval = Math.max(minInterval, baseInterval - this.level * 0.04);
       this.spawnTimer += dt;
       if (this.spawnTimer >= this.spawnInterval) {
         this.spawnTimer = 0;
         this.spawnDemon();
-        if (this.time > 5 && this.time % 15 < 0.04) {
-          this.level++;
-        }
+        // At high levels, sometimes spawn an extra demon so count keeps rising.
+        if (this.level >= 15 && Math.random() < 0.2) this.spawnDemon();
+        if (this.level >= 35 && Math.random() < 0.15) this.spawnDemon();
       }
     }
 
@@ -2397,6 +2412,7 @@ class Game {
 
   endGame(victory) {
     this.gameOver = true;
+    if (typeof stopStageMusic === "function") stopStageMusic();
     if (ui.overlayTitle) ui.overlayTitle.textContent = victory ? "Victory" : "Fallen Crusader";
     const finalScore = this.knight ? Math.round(this.knight.score) : 0;
     const survivedSeconds = Math.floor(this.time);
@@ -2543,6 +2559,29 @@ function stopTitleMusic() {
     titleMusic.pause();
     titleMusic.currentTime = 0;
   }
+}
+
+const STAGE_MUSIC_IDS = ["stage-music-0", "stage-music-1", "stage-music-2"];
+
+function stopStageMusic() {
+  STAGE_MUSIC_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.pause();
+      el.currentTime = 0;
+    }
+  });
+}
+
+function startStageMusic(stageIndex) {
+  if (stageIndex < 0 || stageIndex >= STAGE_MUSIC_IDS.length) return;
+  stopStageMusic();
+  const el = document.getElementById(STAGE_MUSIC_IDS[stageIndex]);
+  if (!el) return;
+  if (titleMusic) el.muted = titleMusic.muted;
+  el.currentTime = 0;
+  const p = el.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
 }
 
 function startFromTitleScreen(mode, campaignStageIndex) {
@@ -2816,6 +2855,7 @@ function showCampaignTransitionCinematic(transitionIndex) {
 
 function returnToTitleAfterCampaign() {
   game.gameOver = true;
+  if (typeof stopStageMusic === "function") stopStageMusic();
   if (campaignTransitionCinematic) campaignTransitionCinematic.classList.add("hidden");
   if (ui.overlay) ui.overlay.classList.add("hidden");
   if (titleScreen) titleScreen.classList.remove("hidden");
