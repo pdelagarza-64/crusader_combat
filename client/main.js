@@ -2947,12 +2947,14 @@ function returnToTitleAfterCampaign() {
     const p = titleMusic.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
   }
+  if (titleFlamesCtx) requestAnimationFrame(drawFlames);
 }
 
 function leaveToTitleFromPause() {
   game.paused = false;
   if (ui.pauseOverlay) ui.pauseOverlay.classList.add("hidden");
   if (typeof stopStageMusic === "function") stopStageMusic();
+  game.campaignStageIndex = -1;
   game.reset();
   if (titleScreen) titleScreen.classList.remove("hidden");
   titleScreenActive = true;
@@ -2961,6 +2963,7 @@ function leaveToTitleFromPause() {
     const p = titleMusic.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
   }
+  if (titleFlamesCtx) requestAnimationFrame(drawFlames);
 }
 
 const campaignCinematic = document.getElementById("campaign-cinematic");
