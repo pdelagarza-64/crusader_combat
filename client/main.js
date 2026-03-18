@@ -1392,6 +1392,10 @@ function getEndlessWaveEntries(waveIndex) {
 const GROUND_Y = GAME_HEIGHT - 40;
 const ARENA_LEFT = 60;
 const ARENA_RIGHT = GAME_WIDTH - 60;
+/** Flying demons cruise in upper half of screen (y is top of sprite). */
+const FLYING_AIR_Y_MIN = 6;
+const FLYING_UPPER_BAND_BOTTOM = (h) => GAME_HEIGHT * 0.5 - h - 8;
+const FLYING_LANDING_APPROACH_TIME = 2.6;
 const STUN_KNOCKBACK_SPEED = 280;
 const STUN_DURATION = 0.5;
 const DEMON_FLASH_DURATION = 0.12;
@@ -1407,7 +1411,7 @@ const KNIGHT_STUN_DURATION = 1.0;
 const DIRT_GRAVITY = 980;
 
 class Demon extends Entity {
-  constructor(x, level, type) {
+  constructor(x, level, type, flySpawn = null) {
     const stats = getDemonStats(type);
     const w = stats.w;
     const h = stats.h;
@@ -1447,11 +1451,33 @@ class Demon extends Entity {
     this.nextLandAt = 9 + Math.random() * 4;
     this.landUntil = 0;
     this.flyingFireCooldown = 0;
+    this.flyLandingApproach = false;
     if (type === DEMON_TYPES.FLYING) {
-      this.y = GROUND_Y - stats.h - 70;
-      this.flyTargetX = x + w / 2;
-      this.flyVx = (Math.random() - 0.5) * 50;
-      this.flyVy = (Math.random() - 0.5) * 20;
+      const h = stats.h;
+      const yBandTop = FLYING_AIR_Y_MIN + 8;
+      const yBandBot = FLYING_UPPER_BAND_BOTTOM(h) - 8;
+      const yRange = Math.max(20, yBandBot - yBandTop);
+      if (flySpawn && (flySpawn.entry === "left" || flySpawn.entry === "right")) {
+        const fromLeft = flySpawn.entry === "left";
+        this.flyCrossDir = fromLeft ? 1 : -1;
+        this.x = fromLeft ? ARENA_LEFT - w - 55 : ARENA_RIGHT + 45;
+        this.y = yBandTop + Math.random() * yRange;
+        const baseSpeed = 130 + Math.random() * 150;
+        const speed = baseSpeed;
+        this.flyVx = fromLeft ? speed : -speed;
+        this.flyVy = (Math.random() - 0.5) * 60;
+      } else {
+        const fromLeft = Math.random() < 0.5;
+        this.flyCrossDir = fromLeft ? 1 : -1;
+        this.x = fromLeft ? ARENA_LEFT - w - 55 : ARENA_RIGHT + 45;
+        this.y = yBandTop + Math.random() * yRange;
+        const baseSpeed = 130 + Math.random() * 150;
+        this.flyVx = fromLeft ? baseSpeed : -baseSpeed;
+        this.flyVy = (Math.random() - 0.5) * 60;
+      }
+      this.flyTargetX = this.x + w / 2;
+      this.flyBuzzAngle = this.flyCrossDir > 0 ? 0 : Math.PI;
+      this.flyDartTimer = 0.12 + Math.random() * 0.28;
     }
   }
 
@@ -1524,11 +1550,28 @@ class Demon extends Entity {
     if (this.type === DEMON_TYPES.FLYING) {
       this.x += this.flyVx * dt;
       this.y += this.flyVy * dt;
-      if (this.x < ARENA_LEFT) { this.x = ARENA_LEFT; this.flyVx = Math.abs(this.flyVx) * 0.5; }
-      if (this.x > ARENA_RIGHT - this.w) { this.x = ARENA_RIGHT - this.w; this.flyVx = -Math.abs(this.flyVx) * 0.5; }
-      const flyCeiling = groundY - this.h - 120;
-      if (this.y < flyCeiling) { this.y = flyCeiling; this.flyVy = Math.abs(this.flyVy) * 0.5; }
-      if (this.y > groundY - this.h) this.y = groundY - this.h;
+      if (this.x < ARENA_LEFT && this.flyVx < 0) { this.x = ARENA_LEFT; this.flyVx = Math.abs(this.flyVx) * 0.55; }
+      if (this.x > ARENA_RIGHT - this.w && this.flyVx > 0) { this.x = ARENA_RIGHT - this.w; this.flyVx = -Math.abs(this.flyVx) * 0.55; }
+      const yTop = FLYING_AIR_Y_MIN;
+      const upperMax = FLYING_UPPER_BAND_BOTTOM(this.h);
+      if (this.state === "landed_idle") {
+        this.y = groundY - this.h;
+      } else if (!this.flyLandingApproach) {
+        if (this.y < yTop) {
+          this.y = yTop;
+          this.flyVy = Math.abs(this.flyVy) * 0.55;
+        }
+        if (this.y > upperMax) {
+          this.y = upperMax;
+          this.flyVy = -Math.abs(this.flyVy) * 0.5;
+        }
+      } else {
+        if (this.y < yTop) {
+          this.y = yTop;
+          this.flyVy = Math.abs(this.flyVy) * 0.45;
+        }
+        if (this.y > groundY - this.h) this.y = groundY - this.h;
+      }
     } else {
       this.x += this.vx * dt;
       if (this.x < ARENA_LEFT) this.x = ARENA_LEFT;
@@ -1538,14 +1581,18 @@ class Demon extends Entity {
 
   updateFlying(dt, knight, game) {
     const groundY = GROUND_Y;
-    const flyAltitude = 70;
-    const flySpeed = 65;
     const pauseDuration = 4 + Math.random() * 2;
     const moveDuration = 4 + Math.random() * 2;
     const landIdleDuration = 4 + Math.random() * 2;
     const landInterval = 9 + Math.random() * 4;
+    const myCenterX = this.x + this.w / 2;
+    const myCenterY = this.y + this.h / 2;
+    const bandTop = FLYING_AIR_Y_MIN;
+    const bandBot = FLYING_UPPER_BAND_BOTTOM(this.h);
+    const idealYCruise = (bandTop + bandBot) * 0.5 + this.h * 0.35;
 
     if (this.state === "landed_idle") {
+      this.flyLandingApproach = false;
       this.flyVx = 0;
       this.flyVy = 0;
       this.y = groundY - this.h;
@@ -1554,36 +1601,76 @@ class Demon extends Entity {
         this.state = "flying";
         this.flyMoveUntil = moveDuration;
         this.nextLandAt = landInterval;
-        this.flyVy = -55;
-        this.flyTargetX = this.x + this.w / 2;
-      }
-      return;
-    }
-
-    if (this.state === "flying_pause") {
-      this.flyVx *= 0.9;
-      this.flyVy *= 0.9;
-      this.flyPauseUntil -= dt;
-      if (this.flyPauseUntil <= 0) {
-        this.state = "flying";
-        this.flyMoveUntil = moveDuration;
-      }
-      this.flyingFireCooldown -= dt;
-      if (this.flyingFireCooldown <= 0 && this.y < groundY - this.h - 20) {
-        this.fireFlame(knight, game, 1);
-        this.flyingFireCooldown = 2;
+        this.flyVy = -240 - Math.random() * 120;
+        this.flyVx = (Math.random() - 0.5) * 180;
+        this.flyCrossDir = this.flyVx >= 0 ? 1 : -1;
+        this.flyBuzzAngle = Math.random() * Math.PI * 2;
+        this.flyDartTimer = 0.08 + Math.random() * 0.18;
       }
       return;
     }
 
     this.nextLandAt -= dt;
+    const inAir = this.state === "flying" || this.state === "flying_pause";
+    this.flyLandingApproach =
+      inAir &&
+      this.nextLandAt > 0 &&
+      this.nextLandAt < FLYING_LANDING_APPROACH_TIME;
+
     if (this.nextLandAt <= 0 && this.landUntil <= 0) {
       this.state = "landed_idle";
       this.landUntil = landIdleDuration;
       this.flyVx = 0;
       this.flyVy = 0;
+      this.flyLandingApproach = false;
       this.y = groundY - this.h;
       this.nextLandAt = landInterval;
+      return;
+    }
+
+    if (this.state === "flying_pause") {
+      if (this.flyLandingApproach) {
+        this.flyVy += 420 * dt;
+        this.flyVx += (GAME_WIDTH / 2 - myCenterX) * 0.06 * dt * 60;
+        this.flyVx *= Math.pow(0.97, dt * 60);
+        this.flyVy *= Math.pow(0.995, dt * 60);
+        const sp = Math.hypot(this.flyVx, this.flyVy);
+        if (sp > 200) {
+          this.flyVx = (this.flyVx / sp) * 200;
+          this.flyVy = (this.flyVy / sp) * 200;
+        }
+      } else {
+        const crossDir = this.flyCrossDir != null ? this.flyCrossDir : (this.flyVx >= 0 ? 1 : -1);
+        this.flyBuzzAngle += (Math.random() - 0.5) * 10 * dt;
+        this.flyBuzzAngle += Math.sin(this.animTime * 14) * 3 * dt;
+        const w = 100 + Math.random() * 80;
+        this.flyVx += Math.cos(this.flyBuzzAngle) * w * dt;
+        this.flyVy += Math.sin(this.flyBuzzAngle * 1.25) * w * dt;
+        this.flyVx += (Math.random() - 0.5) * 70 * dt;
+        this.flyVy += (Math.random() - 0.5) * 65 * dt;
+        this.flyVx += crossDir * 95 * dt;
+        this.flyVy += (idealYCruise - myCenterY) * 0.032 * dt * 60;
+        this.flyVx *= Math.pow(0.986, dt * 60);
+        this.flyVy *= Math.pow(0.986, dt * 60);
+        const sp = Math.hypot(this.flyVx, this.flyVy);
+        const maxSp = 180 + Math.random() * 80;
+        if (sp > maxSp) {
+          this.flyVx = (this.flyVx / sp) * maxSp;
+          this.flyVy = (this.flyVy / sp) * maxSp;
+        }
+      }
+      this.flyPauseUntil -= dt;
+      if (this.flyPauseUntil <= 0) {
+        this.state = "flying";
+        this.flyMoveUntil = moveDuration;
+        this.flyDartTimer = 0.06 + Math.random() * 0.2;
+      }
+      this.facing = this.flyVx >= 0 ? 1 : -1;
+      this.flyingFireCooldown -= dt;
+      if (this.flyingFireCooldown <= 0 && this.y < groundY - this.h - 20) {
+        this.fireFlame(knight, game, 1);
+        this.flyingFireCooldown = 2;
+      }
       return;
     }
 
@@ -1595,17 +1682,48 @@ class Demon extends Entity {
     }
 
     if (this.state === "flying") {
-      const targetY = groundY - this.h - flyAltitude - Math.sin(this.animTime * 1.5) * 15;
-      const myCenterX = this.x + this.w / 2;
-      this.flyTargetX += (Math.random() - 0.5) * 40 * dt;
-      this.flyTargetX = Math.max(ARENA_LEFT + 80, Math.min(ARENA_RIGHT - 80, this.flyTargetX));
-      this.flyTargetY = targetY;
-      const dx = this.flyTargetX - myCenterX;
-      const dy = this.flyTargetY - (this.y + this.h / 2);
-      const len = Math.hypot(dx, dy) || 1;
-      this.flyVx = (dx / len) * flySpeed * (0.6 + Math.random() * 0.5);
-      this.flyVy = (dy / len) * flySpeed * (0.6 + Math.random() * 0.5);
-      this.facing = dx >= 0 ? 1 : -1;
+      if (this.flyLandingApproach) {
+        this.flyVy += 380 * dt;
+        this.flyVx += (GAME_WIDTH / 2 - myCenterX) * 0.05 * dt * 60;
+        this.flyBuzzAngle += (Math.random() - 0.5) * 3 * dt;
+        this.flyVx += Math.cos(this.flyBuzzAngle) * 70 * dt;
+        this.flyVy += Math.sin(this.flyBuzzAngle) * 40 * dt;
+        this.flyVx *= Math.pow(0.992, dt * 60);
+        const sp = Math.hypot(this.flyVx, this.flyVy);
+        if (sp > 220) {
+          this.flyVx = (this.flyVx / sp) * 220;
+          this.flyVy = (this.flyVy / sp) * 220;
+        }
+      } else {
+        const crossDir = this.flyCrossDir != null ? this.flyCrossDir : (this.flyVx >= 0 ? 1 : -1);
+        this.flyDartTimer -= dt;
+        if (this.flyDartTimer <= 0) {
+          this.flyDartTimer = 0.08 + Math.random() * 0.38;
+          this.flyBuzzAngle += (Math.random() - 0.5) * Math.PI * 1.6;
+          const dart = 220 + Math.random() * 200;
+          this.flyVx += Math.cos(this.flyBuzzAngle) * dart * dt * 10;
+          this.flyVy += Math.sin(this.flyBuzzAngle * 1.12 + this.animTime) * dart * dt * 10;
+        }
+        this.flyBuzzAngle += (Math.random() - 0.5) * 7 * dt;
+        this.flyBuzzAngle += Math.sin(this.animTime * 11 + this.x * 0.025) * 3 * dt;
+        this.flyBuzzAngle += Math.cos(this.animTime * 17 + this.y * 0.04) * 2.5 * dt;
+        const wobble = 160 + Math.random() * 120;
+        this.flyVx += Math.cos(this.flyBuzzAngle) * wobble * dt;
+        this.flyVy += Math.sin(this.flyBuzzAngle * 1.38 + 1.9) * wobble * dt;
+        this.flyVx += (Math.random() - 0.5) * 75 * dt;
+        this.flyVy += (Math.random() - 0.5) * 70 * dt;
+        this.flyVx += crossDir * 110 * dt;
+        this.flyVy += (idealYCruise - myCenterY) * 0.038 * dt * 60;
+        this.flyVx *= Math.pow(0.991, dt * 60);
+        this.flyVy *= Math.pow(0.991, dt * 60);
+        const sp = Math.hypot(this.flyVx, this.flyVy);
+        const maxSp = 240 + Math.random() * 100;
+        if (sp > maxSp) {
+          this.flyVx = (this.flyVx / sp) * maxSp;
+          this.flyVy = (this.flyVy / sp) * maxSp;
+        }
+      }
+      this.facing = this.flyVx >= 0 ? 1 : -1;
     }
 
     this.flyingFireCooldown -= dt;
@@ -2152,7 +2270,10 @@ class Game {
     if (type === DEMON_TYPES.BRIMSTONE || type === DEMON_TYPES.VANGUARD) {
       x = spawnLeft ? ARENA_LEFT : ARENA_RIGHT - getDemonStats(type).w;
     } else if (type === DEMON_TYPES.FLYING) {
-      x = ARENA_LEFT + 60 + Math.random() * (ARENA_RIGHT - ARENA_LEFT - 60 - getDemonStats(type).w);
+      const entry = Math.random() < 0.5 ? "left" : "right";
+      x = ARENA_LEFT;
+      this.demons.push(new Demon(x, this.level, type, { entry }));
+      return;
     } else {
       x = spawnLeft ? ARENA_LEFT + 30 : ARENA_RIGHT - getDemonStats(type).w - 30;
     }
