@@ -1098,11 +1098,28 @@ class Knight extends Entity {
     if (this.vx > 10) this.facing = 1;
     else if (this.vx < -10) this.facing = -1;
 
-    const wantJump = (keys.up || keys.jumpPressed) && this.onGround;
+    const wantJump = (keys.up || keys.jumpPressed) && this.bottom >= GROUND_Y - 5;
     if (wantJump) {
       this.vy = jumpVelocity;
+      // Nudge slightly above the ground so the same-frame physics
+      // doesn't immediately clamp us back down to y = GROUND_Y - h.
+      this.y = GROUND_Y - this.h - 1;
       this.onGround = false;
       keys.jumpPressed = false;
+      // Consume one-tap jumps so a held "jump button" doesn't re-trigger.
+      keys.up = false;
+
+      // Best-effort debug for cases where button/keys appear to react but no jump occurs.
+      const g = typeof globalThis !== "undefined" ? globalThis.game : null;
+      if (g && typeof g._jumpDebugUntil !== "undefined") {
+        g._jumpDebugUntil = performance.now() + 1200;
+        g._jumpDebugText =
+          `JumpKeys: state=${this.getState()} ` +
+          `vy=${this.vy.toFixed(1)} y=${this.y.toFixed(1)} bottom=${this.bottom.toFixed(1)} ` +
+          `onGround=${this.onGround} blocking=${this.blocking} ` +
+          `stun=${this.stunTime.toFixed(2)} deadAnim=${this.deathAnimTime.toFixed(2)} ` +
+          `attackCD=${this.attackCooldown.toFixed(2)}`;
+      }
     }
 
     this.vy += gravity * dt;
@@ -1210,8 +1227,12 @@ class Knight extends Entity {
     }
 
     const footYLocal = getKnightFootYForState(state === "death" ? "idle" : state, frame);
+    // The physics simulates vertical position via `this.y`, but historically
+    // the render anchored to `GROUND_Y`. Apply vertical offset so jumps are visible.
+    const groundKnightY = GROUND_Y - this.h;
+    const verticalOffset = this.y - groundKnightY;
     ctx.save();
-    ctx.translate(this.x + this.w / 2, groundY - footYLocal);
+    ctx.translate(this.x + this.w / 2, groundY - footYLocal + verticalOffset);
     ctx.scale(this.facing, 1);
 
     if (dying) {
@@ -1356,14 +1377,14 @@ function getEndlessWaveEntries(waveIndex) {
     return wave.map((e) => ({ type: e.type, delay: e.delay }));
   }
   const base = (CAMPAIGN_STAGES[2].waves || [])[2] || [];
-  const scale = Math.pow(1.25, waveIndex - 6);
+  // Exponential growth: wave 7 (endless waveIndex=6) starts at +25% vs Stage 3 wave 3.
+  const scale = Math.pow(1.25, waveIndex - 5);
   const targetCount = Math.max(base.length, Math.round(base.length * scale));
   const out = [];
-  const repeatGap = 12;
   for (let i = 0; i < targetCount; i++) {
     const e = base[i % base.length];
-    const repeat = Math.floor(i / base.length);
-    out.push({ type: e.type, delay: e.delay + repeat * repeatGap });
+    // Keep the same delays as Stage 3 wave 3 so the wave pacing stays the same.
+    out.push({ type: e.type, delay: e.delay });
   }
   return out;
 }
@@ -1986,6 +2007,8 @@ class Game {
     this.pauseMusicTargetRate = 1;
     this.pauseMusicTargetVolume = 1;
     this.loop = this.loop.bind(this);
+    this._jumpDebugUntil = 0;
+    this._jumpDebugText = "";
 
     // Debug counters
     this._dbgFrame = 0;
@@ -2537,6 +2560,15 @@ class Game {
     this.drawGroundScars(ctx);
     this.drawShockwaves(ctx);
     if (this.knight) this.knight.draw(ctx);
+    if (this._jumpDebugUntil && performance.now() < this._jumpDebugUntil && this._jumpDebugText) {
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+      ctx.textBaseline = "top";
+      ctx.fillText(this._jumpDebugText, 10, 6);
+      ctx.restore();
+    }
     (this.projectiles || []).forEach(p => this.drawProjectile(ctx, p));
     this.drawDirtParticles(ctx);
     (this.demons || []).forEach(d => {
@@ -3424,11 +3456,37 @@ ui.playAgainBtn.addEventListener("click", () => {
 });
 
 if (ui.btnJump) {
-  ui.btnJump.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    keys.jumpPressed = true;
-  });
+  const triggerJump = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!game || game.gameOver || game.paused || game.campaignCinematicActive) return;
+    const knight = game.knight;
+    if (!knight) return;
+    const jumpVelocity = -430;
+    // Always apply the jump impulse when pressed; the knight's next
+    // physics step will handle whether it can realistically lift.
+    knight.vy = jumpVelocity;
+    knight.y = GROUND_Y - knight.h - 1;
+    knight.onGround = false;
+    keys.jumpPressed = false;
+    keys.up = false;
+
+    game._jumpDebugUntil = performance.now() + 1200;
+    game._jumpDebugText =
+      `JumpBtn: state=${knight.getState()} ` +
+      `vy=${knight.vy.toFixed(1)} y=${knight.y.toFixed(1)} bottom=${knight.bottom.toFixed(1)} ` +
+      `onGround=${knight.onGround} blocking=${knight.blocking} ` +
+      `stun=${knight.stunTime.toFixed(2)} deadAnim=${knight.deathAnimTime.toFixed(2)} ` +
+      `attackCD=${knight.attackCooldown.toFixed(2)}`;
+  };
+
+  ui.btnJump.addEventListener("pointerdown", triggerJump, { passive: false });
+  ui.btnJump.addEventListener("mousedown", triggerJump, { passive: false });
+  ui.btnJump.addEventListener("touchstart", triggerJump, { passive: false });
+  // Fallback for browsers that don’t fire pointerdown reliably.
+  ui.btnJump.addEventListener("click", triggerJump);
 }
 
 if (ui.pauseResumeBtn) {
